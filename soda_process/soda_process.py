@@ -19,6 +19,7 @@ import re
 
 
 def call_process(cmd_list):
+    """Execute a command line from a list of arguments"""
     return_code = 0
     output = ""
     try:
@@ -45,6 +46,9 @@ def call_process(cmd_list):
 
 
 def process_in_scope(expr, files, pipe_step_doc):
+    """Look if the process have already been launched with success,
+    if it's not the case it get the command line given within 
+    the pipe_step_doc dictionnary, evaluate it  and launch it"""
     pipe_step_name = from_yaml(pipe_step_doc, '__NAME__')
     state_filename = os.path.join(builtins.SODA_STATE_DIR,
                                   pipe_step_name + ".yaml")
@@ -68,6 +72,11 @@ def process_in_scope(expr, files, pipe_step_doc):
 
 
 def submit_process(exprs, files, pipe_step_doc):
+    """Create a pool of thread depending on the maximum
+    umber of workers (SODA_MAXWORKERS) when a worker finish its job,
+    print the actual progression of this step of the pipeline
+    ans write the retuen code of the command line in a yaml doc
+    (located at SODA_STATE_DIR)."""
     descrition = from_yaml(pipe_step_doc, '__DESCRIPTION__')
     print("{0}: {1}%\033[K\r".format(descrition, 0), end="")
     sys.stdout.flush()

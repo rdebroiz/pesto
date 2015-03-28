@@ -5,6 +5,7 @@ import os
 
 
 def clean():
+    """Clean log files and state files."""
     if(os.path.exists(builtins.SODA_LOG_FILENAME)):
         os.remove(builtins.SODA_LOG_FILENAME)
     if(os.path.exists(builtins.SODA_STATE_DIR)):

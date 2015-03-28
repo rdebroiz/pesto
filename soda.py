@@ -36,6 +36,7 @@ Options:
 
 
 def main(arguments):
+    """Main function"""
     from soda_clean.soda_clean import clean
     from soda_process.soda_process import submit_process
     from soda_yaml.soda_yaml import load_all_yaml
@@ -151,7 +152,6 @@ def main(arguments):
     # construct Data structure
     # ##############################################################################
 
-    # TODO FIX
     builtins.SODA_ROOT = from_yaml(builtins.SODA_DATA_STRUCTURE, '__ROOT__')
 
     files_set = set()
@@ -163,7 +163,6 @@ def main(arguments):
     files = sorted(files_set)
 
     scopes = from_yaml(builtins.SODA_DATA_STRUCTURE, '__SCOPES__')
-    print("scopes", scopes)
     for scope in scopes:
         scope_expr_set = set()
         pattern = from_yaml(scopes, scope)

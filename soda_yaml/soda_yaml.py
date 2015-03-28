@@ -12,20 +12,23 @@ except ImportError as err:
 
 
 class YamlEvaluationError(LookupError):
-    """docstring for SodaException"""
+    """An error raised when the evaluation of ${statitc_key} or
+    ?{dynamic_key} faile"""
     def __init__(self, arg):
         super(YamlEvaluationError, self).__init__()
         self.arg = arg
 
 
 class YamlLookUpError(LookupError):
-    """docstring for SodaException"""
+    """An error raised when a
+    key is not found within a yaml dicionnary"""
     def __init__(self, arg):
         super(YamlLookUpError, self).__init__()
         self.arg = arg
 
 
 def load_yaml(yaml_filename):
+    """Load a single yaml document from a file in a thread safe context."""
     try:
         with builtins.SODA_LOCK:
             yaml_doc = yaml.load(open(yaml_filename, 'r'))
@@ -39,6 +42,7 @@ def load_yaml(yaml_filename):
 
 
 def load_all_yaml(yaml_filename):
+    """Load a list of yaml documents from a file in a thread safe context."""
     try:
         with builtins.SODA_LOCK:
             yaml_docs = yaml.load_all(open(yaml_filename, 'r'))
@@ -53,6 +57,7 @@ def load_all_yaml(yaml_filename):
 
 
 def dump_yaml(to_dump, yaml_filename):
+    """Dump a python object in yaml document in a thread safe context"""
     try:
         with builtins.SODA_LOCK:
             yaml.dump(to_dump, open(yaml_filename, 'w'),
@@ -65,6 +70,15 @@ def dump_yaml(to_dump, yaml_filename):
 
 
 def evaluate_yaml_expression(value, files_in_current_scope=[]):
+    """Evaluate an expression of a yaml document.
+    An expression can be static: ${key} or dynamic: ?{key}
+    If the expression is static it will just be replace
+    by the value corresponding to the given key in the dictionnary
+    SODA_DATA_STRUCTURE (the first document in the yaml config files).
+    If the expression is dynamic it will be replace by the string
+    matching the regular expression give by the value corresponding
+    to the given key in SODA_DATA_STRUCTURE with all the path of each file
+    found in the current scope."""
     all_evaluated = False
     while(not all_evaluated):
         match_dolls = re.search(r"\$\{(.*?)\}", value)
@@ -100,6 +114,8 @@ def evaluate_yaml_expression(value, files_in_current_scope=[]):
 
 
 def from_yaml(yaml_dic, key):
+    """Return the value (evaluated) corresponding to the key 'key'
+    in the dictionnary yaml_dic"""
     try:
         value = yaml_dic[key]
     except KeyError:
