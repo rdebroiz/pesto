@@ -56,6 +56,7 @@ def main(arguments):
     builtins.SODA_LOG_FILENAME = "soda.log"
     builtins.SODA_STATE_DIR = ".soda"
     builtins.SODA_MAXWORKERS = 0
+    builtins.SODA_ROOT = ""
     from concurrent.futures.thread import threading
     builtins.SODA_LOCK = threading.Lock()
 
@@ -90,7 +91,8 @@ def main(arguments):
         print(err)
         sys.exit(1)
 
-    logging.basicConfig(filename=builtins.SODA_LOG_FILENAME, level=numeric_level,
+    logging.basicConfig(filename=builtins.SODA_LOG_FILENAME,
+                        level=numeric_level,
                         format='%(levelname)s @ %(asctime)s '
                         '->\n %(message)s\n',
                         datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -149,29 +151,30 @@ def main(arguments):
     # construct Data structure
     # ##############################################################################
 
+    # TODO FIX
     builtins.SODA_ROOT = from_yaml(builtins.SODA_DATA_STRUCTURE, '__ROOT__')
 
-    files_for_scope = dict()
+    files_set = set()
     exprs_for_scope = dict()
     for root, folder, files in os.walk(builtins.SODA_ROOT):
         for f in files:
             path = os.path.join(root, f)
-            for scope in from_yaml(builtins.SODA_DATA_STRUCTURE,
-                                   '__SCOPE__'):
-                scop_file_set = set()
-                scop_expr_set = set()
-                for expression in from_yaml(builtins.SODA_DATA_STRUCTURE,
-                                            scope):
-                    pattern = from_yaml(builtins.SODA_DATA_STRUCTURE,
-                                        expression)
-                    match = re.search(r".*?" + pattern, path)
-                    if match:
-                        scop_file_set.add(match.group(0))
-                        scop_expr_set.add(path)
-                files_for_scope[scope] = sorted(scop_file_set)
-                exprs_for_scope[scope] = sorted(scop_expr_set)
+            files_set.add(path)
+    files = sorted(files_set)
 
-    logging.debug("files in scopes:\n%s", pformat(files_for_scope))
+    scopes = from_yaml(builtins.SODA_DATA_STRUCTURE, '__SCOPES__')
+    print("scopes", scopes)
+    for scope in scopes:
+        scope_expr_set = set()
+        pattern = from_yaml(scopes, scope)
+        for f in files:
+            match = re.search(r".*?" + pattern, f)
+            if match:
+                scope_expr_set.add(match.group(0))
+        exprs_for_scope[scope] = sorted(scope_expr_set)
+
+    logging.debug("scopes expressions:\n%s", pformat(exprs_for_scope))
+    logging.debug("files:\n%s", pformat(files))
     logging.debug("pipeline :\n%s", pformat(yaml_pipe_document))
 
     # ##############################################################################
@@ -179,14 +182,14 @@ def main(arguments):
     # ##############################################################################
 
     for pipe_step_doc in yaml_pipe_document:
-        try:
-            scope = from_yaml(pipe_step_doc, '__SCOPE__')
-            assert scope in exprs_for_scope.keys()
-        except:
-            logging.error("Bad pipeline configuration file.\n"
-                          "Each of your pipeline step need a __SCOPE__ feild"
-                          "with a value within: %s", exprs_for_scope.keys())
-        submit_process(exprs_for_scope[scope], files_for_scope[scope],
+        scope = from_yaml(pipe_step_doc, '__SCOPE__')
+        if scope not in exprs_for_scope.keys():
+            logging.critical("Bad pipeline configuration file.\n"
+                             "Each of your pipeline step need a __SCOPE__ "
+                             "feild with a value within: %s",
+                             exprs_for_scope.keys())
+            sys.exit(1)
+        submit_process(exprs_for_scope[scope], files,
                        pipe_step_doc)
 
 # -- Main

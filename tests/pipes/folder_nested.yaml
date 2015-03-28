@@ -1,43 +1,34 @@
 # ##############################################################################
+# Helpers:
+# ##############################################################################
+
+PATIENTS_EXPR: (${FOO_PATIENT}|${BAR_PATIENT})
+STUDIES_EXPR: (${FOO_STUDY}|${BAR_STUDY})
+SERIES_EXPR: (${FOO_SERIES}|${BAR_SERIES})
+
+FOO_PATIENT: P_..
+BAR_PATIENT: .._P
+FOO_STUDY: STUDY_\d
+BAR_STUDY: STUDY_\w
+FOO_SERIES: ric
+BAR_SERIES: roll
+
+MESSAGE: "We are processing: "
+
+# ##############################################################################
 # MANDATORY --> ROOT path
 # ##############################################################################
+
 __ROOT__: tests/test_folder_nested
 
 # ##############################################################################
 # MANDATORY --> SCOPE structure
 # ##############################################################################
-__SCOPE__:
-  - PATIENTS
-  - STUDIES
-  - SERIES
-
-PATIENTS: 
-  - FOO_PATIENT
-  # - BAR_PATIENT
-FOO_PATIENT: P_..
-BAR_PATIENT: .._P
-
-STUDIES:
-  - FOO_STUDY
-  # - BAR_STUDY
-FOO_STUDY: STUDY_\d
-BAR_STUDY: STUDY_\w
-
-SERIES: 
-  - FOO_SERIES
-  # - BAR_SERIES
-FOO_SERIES: ric
-BAR_SERIES: roll
-
-# ##############################################################################
-# Helpers:
-# ##############################################################################
-
-ALL_PATIENT: ${FOO_PATIENT}|${BAR_PATIENT}
-ALL_STUDY: ${FOO_STUDY}|${BAR_STUDY}
-ALL_SERIES: ${FOO_SERIES}|${BAR_SERIES}
-
-MESSAGE: "We are processing: "
+__SCOPES__:
+  ROOT: ${__ROOT__}
+  PATIENT: ${PATIENTS_EXPR}
+  STUDY: ${STUDIES_EXPR}
+  SERIE: ${SERIES_EXPR}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

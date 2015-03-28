@@ -4,6 +4,7 @@ from soda_yaml.soda_yaml import evaluate_yaml_expression
 from soda_yaml.soda_yaml import from_yaml
 from soda_yaml.soda_yaml import load_yaml
 from soda_yaml.soda_yaml import dump_yaml
+from soda_yaml.soda_yaml import YamlEvaluationError
 
 import subprocess
 
@@ -11,10 +12,10 @@ from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
 
 import logging
-from pprint import pformat
 
 import os
 import sys
+import re
 
 
 def call_process(cmd_list):
@@ -26,16 +27,16 @@ def call_process(cmd_list):
     except PermissionError as permission_error:
         logging.error("Permission denied to launch '%s':\n%s", cmd_list,
                       permission_error)
-        return_code = 1
+        return_code = -1
     except subprocess.CalledProcessError as err:
         error = err.output.decode("utf-8")
         logging.error("Fail to launch: %s\n%s", cmd_list, error)
-        return_code = 1
+        return_code = -1
     except FileNotFoundError:
         # This exception is raised if the first arg of cmd_list is not a valid
         # comand.
         logging.error("Command not found: '%s'.", cmd_list[0])
-        return_code = 1
+        return_code = -1
     except TypeError as type_error:
         logging.warning("Fail to format process output:\n%s", type_error)
 
@@ -54,9 +55,13 @@ def process_in_scope(expr, files, pipe_step_doc):
                 return 0
 
     cmd_list = from_yaml(pipe_step_doc, '__CMD__')
-    cmd_list = [evaluate_yaml_expression(arg, files_in_current_scope=files)
-                for arg in cmd_list]
-    logging.debug(pformat(cmd_list))
+    files = [f for f in files if re.search(expr, f)]
+    try:
+        cmd_list = [evaluate_yaml_expression(arg, files_in_current_scope=files)
+                    for arg in cmd_list]
+    except YamlEvaluationError as err:
+        logging.error("Unable to evaluate yaml variable:\n%s", str(err))
+        return -1
 
     return_code = call_process(cmd_list)
     return return_code

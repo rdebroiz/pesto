@@ -11,6 +11,20 @@ except ImportError as err:
     print("Soda need pyyaml", err)
 
 
+class YamlEvaluationError(LookupError):
+    """docstring for SodaException"""
+    def __init__(self, arg):
+        super(YamlEvaluationError, self).__init__()
+        self.arg = arg
+
+
+class YamlLookUpError(LookupError):
+    """docstring for SodaException"""
+    def __init__(self, arg):
+        super(YamlLookUpError, self).__init__()
+        self.arg = arg
+
+
 def load_yaml(yaml_filename):
     try:
         with builtins.SODA_LOCK:
@@ -69,14 +83,13 @@ def evaluate_yaml_expression(value, files_in_current_scope=[]):
                 match_eval = re.search(to_evaluate, serie)
                 if match_eval:
                     evaluated_value.add(match_eval.group(0))
-            try:
-                assert len(evaluated_value) == 1
-            except AssertionError:
-                logging.critical("Bad evaluation of '?{%s}', within '%s'\n"
-                                 "Matches are:\n%s",
-                                 match_quest.group(1),
-                                 value,
-                                 pformat(evaluated_value))
+            if (len(evaluated_value) != 1):
+                msg = "Bad evaluation of '{0}', within '{1}'\n"\
+                      "Matches are:{2}%s".format(match_quest.group(1),
+                                                 value,
+                                                 pformat(evaluated_value))
+                # TODO get findhow to get the message.
+                raise YamlEvaluationError(msg)
 
             new = evaluated_value.pop()
             value = re.sub(r"\?\{" + match_quest.group(1) + r"\}", new, value)
@@ -90,8 +103,8 @@ def from_yaml(yaml_dic, key):
     try:
         value = yaml_dic[key]
     except KeyError:
-        logging.critical("YAML error: unable to found %s key", key)
-
+        raise YamlLookUpError("YAML error: unable to "
+                              "found {0} key".format(key))
     if isinstance(value, str):
         value = evaluate_yaml_expression(value)
 

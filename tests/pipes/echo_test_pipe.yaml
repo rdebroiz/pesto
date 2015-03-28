@@ -1,7 +1,7 @@
 __DESCRIPTION__: "Echo test"
-__SCOPE__: SERIES
+__SCOPE__: SERIE
 
 __NAME__: echo_test
 __CMD__: 
   - echo
-  - ${MESSAGE}?{ALL_PATIENT}/?{ALL_STUDY}/?{ALL_SERIES}
+  - "${MESSAGE}?{PATIENTS_EXPR}/?{STUDIES_EXPR}/?{SERIES_EXPR} from within ${__ROOT__}"
