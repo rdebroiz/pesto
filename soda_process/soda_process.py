@@ -13,7 +13,6 @@ from concurrent.futures import ThreadPoolExecutor
 import logging
 from pprint import pformat
 
-import re
 import os
 import sys
 
@@ -44,20 +43,18 @@ def call_process(cmd_list):
     return return_code
 
 
-def process_in_scope(pipe_step_doc, to_process):
-    series = [s for s in builtins.SODA_SERIES if re.search(to_process, s)]
-
-    pipe_step_name = from_yaml(pipe_step_doc, '_NAME')
+def process_in_scope(expr, files, pipe_step_doc):
+    pipe_step_name = from_yaml(pipe_step_doc, '__NAME__')
     state_filename = os.path.join(builtins.SODA_STATE_DIR,
                                   pipe_step_name + ".yaml")
     if(os.path.exists(state_filename)):
         states = load_yaml(state_filename)
-        if to_process in states.keys():
-            if not states[to_process]:
+        if expr in states.keys():
+            if not states[expr]:
                 return 0
 
-    cmd_list = from_yaml(pipe_step_doc, '_CMD')
-    cmd_list = [evaluate_yaml_expression(arg, cur_series=series)
+    cmd_list = from_yaml(pipe_step_doc, '__CMD__')
+    cmd_list = [evaluate_yaml_expression(arg, files_in_current_scope=files)
                 for arg in cmd_list]
     logging.debug(pformat(cmd_list))
 
@@ -65,34 +62,35 @@ def process_in_scope(pipe_step_doc, to_process):
     return return_code
 
 
-def submit_process(scoped_expr_list, pipe_step_doc):
-    descrition = from_yaml(pipe_step_doc, '_DESCRIPTION')
+def submit_process(exprs, files, pipe_step_doc):
+    descrition = from_yaml(pipe_step_doc, '__DESCRIPTION__')
     print("{0}: {1}%\033[K\r".format(descrition, 0), end="")
     sys.stdout.flush()
 
     with ThreadPoolExecutor(max_workers=builtins.SODA_MAXWORKERS) as executor:
-        scoped_expr_for_future = dict()
-        for scoped_expr in scoped_expr_list:
+        expr_for_future = dict()
+        for expr in exprs:
             future = executor.submit(process_in_scope,
-                                     pipe_step_doc,
-                                     scoped_expr)
-            scoped_expr_for_future[future] = scoped_expr
+                                     expr,
+                                     files,
+                                     pipe_step_doc)
+            expr_for_future[future] = expr
 
         progression = 1
-        pipe_step_name = from_yaml(pipe_step_doc, '_NAME')
+        pipe_step_name = from_yaml(pipe_step_doc, '__NAME__')
         state_filename = os.path.join(builtins.SODA_STATE_DIR,
                                       pipe_step_name + ".yaml")
         states = dict()
-        for future in futures.as_completed(scoped_expr_for_future.keys()):
+        for future in futures.as_completed(expr_for_future.keys()):
             # Get the return code of the cmd and store it.
-            scoped_expr = scoped_expr_for_future[future]
+            expr = expr_for_future[future]
             # try:
-            states[scoped_expr] = future.result()
+            states[expr] = future.result()
 
-            if (states[scoped_expr] == 0):
+            if (states[expr] == 0):
                 with builtins.SODA_LOCK:
                     print("{0}: {1:.0%}\033[K\r".format(descrition,
-                          progression / len(scoped_expr_list)), end="")
+                          progression / len(exprs)), end="")
                     # sys.stdout.flush()
                 progression += 1
 

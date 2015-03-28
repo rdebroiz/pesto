@@ -1,7 +1,7 @@
-_DESCRIPTION: "Wrong echo test"
-_SCOPE: _SERIES
+__DESCRIPTION__: "Wrong echo test"
+__SCOPE__: SERIES
 
-_NAME: wrong_echo_test
-_CMD: 
+__NAME__: wrong_echo_test
+__CMD__: 
   - wrong_echo
   - ${MESSAGE}?{ALL_PATIENT}/?{ALL_STUDY}/?{ALL_SERIES}

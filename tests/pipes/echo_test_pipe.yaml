@@ -1,7 +1,7 @@
-_DESCRIPTION: "Echo test"
-_SCOPE: _SERIES
+__DESCRIPTION__: "Echo test"
+__SCOPE__: SERIES
 
-_NAME: echo_test
-_CMD: 
+__NAME__: echo_test
+__CMD__: 
   - echo
   - ${MESSAGE}?{ALL_PATIENT}/?{ALL_STUDY}/?{ALL_SERIES}

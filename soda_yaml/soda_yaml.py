@@ -50,7 +50,7 @@ def dump_yaml(to_dump, yaml_filename):
                       yamlerr)
 
 
-def evaluate_yaml_expression(value, cur_series=[]):
+def evaluate_yaml_expression(value, files_in_current_scope=[]):
     all_evaluated = False
     while(not all_evaluated):
         match_dolls = re.search(r"\$\{(.*?)\}", value)
@@ -65,7 +65,7 @@ def evaluate_yaml_expression(value, cur_series=[]):
                                     match_quest.group(1))
             evaluated_value = set()
 
-            for serie in cur_series:
+            for serie in files_in_current_scope:
                 match_eval = re.search(to_evaluate, serie)
                 if match_eval:
                     evaluated_value.add(match_eval.group(0))

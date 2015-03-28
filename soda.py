@@ -52,9 +52,6 @@ def main(arguments):
     # ##############################################################################
 
     import builtins
-    builtins.SODA_PATIENTS = set()
-    builtins.SODA_STUDIES = set()
-    builtins.SODA_SERIES = set()
     builtins.SODA_DATA_STRUCTURE = dict()
     builtins.SODA_LOG_FILENAME = "soda.log"
     builtins.SODA_STATE_DIR = ".soda"
@@ -152,45 +149,29 @@ def main(arguments):
     # construct Data structure
     # ##############################################################################
 
-    builtins.SODA_ROOT = from_yaml(builtins.SODA_DATA_STRUCTURE, '_ROOT')
+    builtins.SODA_ROOT = from_yaml(builtins.SODA_DATA_STRUCTURE, '__ROOT__')
 
+    files_for_scope = dict()
+    exprs_for_scope = dict()
     for root, folder, files in os.walk(builtins.SODA_ROOT):
         for f in files:
             path = os.path.join(root, f)
-
-            for patient in from_yaml(builtins.SODA_DATA_STRUCTURE,
-                                     '_PATIENTS'):
-                patient_pattern = from_yaml(builtins.SODA_DATA_STRUCTURE,
-                                            patient)
-                match = re.search(r".*?" + patient_pattern, path)
-                if match:
-                    builtins.SODA_PATIENTS.add(match.group(0))
-
-                for study in from_yaml(builtins.SODA_DATA_STRUCTURE,
-                                       '_STUDIES'):
-                    study_pattern = (patient_pattern + r".*?" +
-                                     from_yaml(builtins.SODA_DATA_STRUCTURE,
-                                               study))
-                    match = re.search(r".*?" + study_pattern, path)
+            for scope in from_yaml(builtins.SODA_DATA_STRUCTURE,
+                                   '__SCOPE__'):
+                scop_file_set = set()
+                scop_expr_set = set()
+                for expression in from_yaml(builtins.SODA_DATA_STRUCTURE,
+                                            scope):
+                    pattern = from_yaml(builtins.SODA_DATA_STRUCTURE,
+                                        expression)
+                    match = re.search(r".*?" + pattern, path)
                     if match:
-                        builtins.SODA_STUDIES.add(match.group(0))
+                        scop_file_set.add(match.group(0))
+                        scop_expr_set.add(path)
+                files_for_scope[scope] = sorted(scop_file_set)
+                exprs_for_scope[scope] = sorted(scop_expr_set)
 
-                    for serie in from_yaml(builtins.SODA_DATA_STRUCTURE,
-                                           '_SERIES'):
-                        serie_pattern = (study_pattern + r".*?" +
-                                         from_yaml(builtins.SODA_DATA_STRUCTURE,
-                                                   serie))
-                        match = re.search(r".*?" + serie_pattern, path)
-                        if match:
-                            builtins.SODA_SERIES.add(match.group(0))
-
-    patients = sorted(builtins.SODA_PATIENTS)
-    studies = sorted(builtins.SODA_STUDIES)
-    series = sorted(builtins.SODA_SERIES)
-    logging.debug("patients list:\n %s", pformat(patients))
-    logging.debug("studies list:\n %s", pformat(studies))
-    logging.debug("series list:\n %s", pformat(series))
-
+    logging.debug("files in scopes:\n%s", pformat(files_for_scope))
     logging.debug("pipeline :\n%s", pformat(yaml_pipe_document))
 
     # ##############################################################################
@@ -199,24 +180,14 @@ def main(arguments):
 
     for pipe_step_doc in yaml_pipe_document:
         try:
-            scope = from_yaml(pipe_step_doc, '_SCOPE')
-            assert scope in ['_PATIENTS', '_STUDIES', '_SERIES', '_ROOT']
+            scope = from_yaml(pipe_step_doc, '__SCOPE__')
+            assert scope in exprs_for_scope.keys()
         except:
             logging.error("Bad pipeline configuration file.\n"
-                          "Each pipeline need a _SCOPE feild: "
-                          "['_PATIENTS', '_STUDIES' '_SERIES' or '_ROOT']")
-
-        if (scope == '_PATIENTS'):
-            submit_process(patients, pipe_step_doc)
-        elif (scope == '_STUDIES'):
-            submit_process(studies, pipe_step_doc)
-        elif (scope == '_SERIES'):
-            submit_process(series, pipe_step_doc)
-        elif (scope == '_ROOT'):
-            submit_process([builtins.SODA_ROOT], pipe_step_doc)
-
-    # # -- End of main
-
+                          "Each of your pipeline step need a __SCOPE__ feild"
+                          "with a value within: %s", exprs_for_scope.keys())
+        submit_process(exprs_for_scope[scope], files_for_scope[scope],
+                       pipe_step_doc)
 
 # -- Main
 if __name__ == '__main__':
