@@ -3,7 +3,7 @@ import builtins
 from soda_yaml.soda_yaml import evaluate_yaml_expression
 from soda_yaml.soda_yaml import from_yaml
 from soda_yaml.soda_yaml import load_yaml
-import yaml
+from soda_yaml.soda_yaml import dump_yaml
 
 import subprocess
 
@@ -48,9 +48,7 @@ def process_in_scope(pipe_step_doc, to_process):
     state_filename = os.path.join(builtins.SODA_STATE_DIR,
                                   pipe_step_name + ".yaml")
     if(os.path.exists(state_filename)):
-        builtins.SODA_LOCK.acquire()
         states = load_yaml(state_filename)
-        builtins.SODA_LOCK.release()
         if to_process in states.keys():
             if not states[to_process]:
                 return 0
@@ -89,23 +87,20 @@ def submit_process(scoped_expr_list, pipe_step_doc):
                                       pipe_step_name + ".yaml")
         states = dict()
         for future in futures.as_completed(scoped_expr_for_future.keys()):
-            builtins.SODA_LOCK.acquire()
-
             # Get the return code of the cmd and store it.
             scoped_expr = scoped_expr_for_future[future]
             # try:
             states[scoped_expr] = future.result()
 
             if (states[scoped_expr] == 0):
-                print("\033[K\r{0}: {1:.0%}".format(descrition,
-                      progression / len(scoped_expr_list)), end="")
-                sys.stdout.flush()
+                with builtins.SODA_LOCK:
+                    print("\033[K\r{0}: {1:.0%}".format(descrition,
+                          progression / len(scoped_expr_list)), end="")
+                    sys.stdout.flush()
                 progression += 1
 
             # Dump the retrun codes in a yaml doc
-            stream = open(state_filename, 'w')
-            yaml.dump(states, stream, default_flow_style=False)
-            # stream.close()
-            builtins.SODA_LOCK.release()
+            dump_yaml(states, state_filename)
+
         # Rewrite an empty line
         print("\033[K\r")

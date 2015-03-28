@@ -13,15 +13,12 @@ except ImportError as err:
 
 def load_yaml(yaml_filename):
     try:
-        stream = open(yaml_filename, 'r')
-        yaml_doc = yaml.load(stream)
-        # stream.close()
+        with builtins.SODA_LOCK:
+            yaml_doc = yaml.load(open(yaml_filename, 'r'))
     except OSError as oserr:
         logging.error("Loading %s: %s", yaml_filename, oserr)
         sys.exit(1)
-    except (yaml.error.YAMLError,
-            yaml.scanner.ScannerError,
-            yaml.parser.ParserError) as yamlerr:
+    except (yaml.error.YAMLError) as yamlerr:
         logging.error("Loading %s: %s:", yaml_filename, yamlerr)
         sys.exit(1)
     return yaml_doc
@@ -29,18 +26,28 @@ def load_yaml(yaml_filename):
 
 def load_all_yaml(yaml_filename):
     try:
-        stream = open(yaml_filename, 'r')
-        yaml_docs = yaml.load_all(stream)
+        with builtins.SODA_LOCK:
+            yaml_docs = yaml.load_all(open(yaml_filename, 'r'))
         # stream.close()
     except OSError as oserr:
         logging.error("Loading %s: %s", yaml_filename, oserr)
         sys.exit(1)
-    except (yaml.error.YAMLError,
-            yaml.scanner.ScannerError,
-            yaml.parser.ParserError) as yamlerr:
+    except (yaml.error.YAMLError) as yamlerr:
         logging.error("Loading %s: %s:", yaml_filename, yamlerr)
         sys.exit(1)
     return list(yaml_docs)
+
+
+def dump_yaml(to_dump, yaml_filename):
+    try:
+        with builtins.SODA_LOCK:
+            yaml.dump(to_dump, open(yaml_filename, 'w'),
+                      default_flow_style=False)
+    except (yaml.error.YAMLError) as yamlerr:
+        logging.error("Dumping %s in %s: %s:",
+                      yaml_filename,
+                      to_dump,
+                      yamlerr)
 
 
 def evaluate_yaml_expression(value, cur_series=[]):
@@ -75,13 +82,13 @@ def evaluate_yaml_expression(value, cur_series=[]):
             value = re.sub(r"\?\{" + match_quest.group(1) + r"\}", new, value)
         if(not match_dolls and not match_quest):
             all_evaluated = True
-            
+
     return value
 
 
-def from_yaml(dic, key):
+def from_yaml(yaml_dic, key):
     try:
-        value = dic[key]
+        value = yaml_dic[key]
     except KeyError:
         logging.critical("YAML error: unable to found %s key", key)
 
