@@ -1,0 +1,7 @@
+_DESCRIPTION: "Echo test"
+_SCOPE: _SERIES
+
+_NAME: echo_test
+_CMD: 
+  - echo
+  - ${MESSAGE}?{ALL_PATIENT}/?{ALL_STUDY}/?{ALL_SERIES}

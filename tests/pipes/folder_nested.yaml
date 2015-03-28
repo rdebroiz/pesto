@@ -8,7 +8,7 @@ _ROOT: tests/test_folder_nested
 # ##############################################################################
 _PATIENTS: 
   - FOO_PATIENT
-  - BAR_PATIENT
+  # - BAR_PATIENT
 FOO_PATIENT: P_..
 BAR_PATIENT: .._P
 
@@ -17,7 +17,7 @@ BAR_PATIENT: .._P
 # ##############################################################################
 _STUDIES:
   - FOO_STUDY
-  - BAR_STUDY
+  # - BAR_STUDY
 FOO_STUDY: STUDY_\d
 BAR_STUDY: STUDY_\w
 
@@ -26,7 +26,7 @@ BAR_STUDY: STUDY_\w
 # ##############################################################################
 _SERIES: 
   - FOO_SERIES
-  - BAR_SERIES
+  # - BAR_SERIES
 FOO_SERIES: ric
 BAR_SERIES: roll
 
@@ -43,18 +43,9 @@ MESSAGE: "We are processing: "
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 
-# Here start the pipelines
+# Here may starts the pipelines
 # 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
----
-
-_DESCRIPTION: "Echo test folder nested"
-_SCOPE: _SERIES
-
-_NAME: echo_test_folder_nested
-_CMD: 
-  - echo
-  - ${MESSAGE}?{ALL_PATIENT}/?{ALL_STUDY}/?{ALL_SERIES}
-
+# ---

@@ -24,18 +24,21 @@ def call_process(cmd_list):
     try:
         output = subprocess.check_output(cmd_list, stderr=subprocess.STDOUT)
         output = output.decode("utf-8")
-    except PermissionError:
-        logging.critical("Permission denied to launch: %s", cmd_list)
-        return 1
+    except PermissionError as permission_error:
+        logging.error("Permission denied to launch '%s':\n%s", cmd_list,
+                      permission_error)
+        return_code = 1
     except subprocess.CalledProcessError as err:
-        try:
-            error = err.output.decode("utf-8")
-            logging.critical("return code:", err.returncode, "\n",
-                             error)
-        except TypeError as err2:
-            logging.warning("fail to format process output:\n%s", err2)
-        finally:
-            raise Exception("Error during  call_process")
+        error = err.output.decode("utf-8")
+        logging.error("Fail to launch: %s\n%s", cmd_list, error)
+        return_code = 1
+    except FileNotFoundError:
+        # This exception is raised if the first arg of cmd_list is not a valid
+        # comand.
+        logging.error("Command name not correct: %s.", cmd_list)
+        return_code = 1
+    except TypeError as type_error:
+        logging.warning("Fail to format process output:\n%s", type_error)
 
     logging.info(output)
     return return_code
@@ -58,19 +61,13 @@ def process_in_scope(pipe_step_doc, to_process):
                 for arg in cmd_list]
     logging.debug(pformat(cmd_list))
 
-    try:
-        return_code = call_process(cmd_list)
-    except Exception:
-        logging.critical("Error happend during process of %s, for %s:",
-                         pipe_step_name, to_process)
-        return_code = 1
-    finally:
-        return return_code
+    return_code = call_process(cmd_list)
+    return return_code
 
 
 def submit_process(scoped_expr_list, pipe_step_doc):
     descrition = from_yaml(pipe_step_doc, '_DESCRIPTION')
-    print("{0}: {1}%".format(descrition, 0), end="")
+    print("{0}: {1}%\033[K\r".format(descrition, 0), end="")
     sys.stdout.flush()
 
     with ThreadPoolExecutor(max_workers=builtins.SODA_MAXWORKERS) as executor:
@@ -94,13 +91,13 @@ def submit_process(scoped_expr_list, pipe_step_doc):
 
             if (states[scoped_expr] == 0):
                 with builtins.SODA_LOCK:
-                    print("\033[K\r{0}: {1:.0%}".format(descrition,
+                    print("{0}: {1:.0%}\033[K\r".format(descrition,
                           progression / len(scoped_expr_list)), end="")
-                    sys.stdout.flush()
+                    # sys.stdout.flush()
                 progression += 1
 
             # Dump the retrun codes in a yaml doc
             dump_yaml(states, state_filename)
 
         # Rewrite an empty line
-        print("\033[K\r")
+        print("")
