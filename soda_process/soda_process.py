@@ -34,7 +34,7 @@ def call_process(cmd_list):
     except FileNotFoundError:
         # This exception is raised if the first arg of cmd_list is not a valid
         # comand.
-        logging.error("Command name not correct: %s.", cmd_list)
+        logging.error("Command not found: '%s'.", cmd_list[0])
         return_code = 1
     except TypeError as type_error:
         logging.warning("Fail to format process output:\n%s", type_error)
