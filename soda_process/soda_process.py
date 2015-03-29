@@ -31,7 +31,7 @@ def call_process(cmd_list):
         return_code = -1
     except subprocess.CalledProcessError as err:
         error = err.output.decode("utf-8")
-        logging.error("Fail to launch command: '%s'\n%s", " ".join(cmd_list), 
+        logging.error("Fail to launch command: '%s'\n%s", " ".join(cmd_list),
                       error)
         return_code = -1
     except FileNotFoundError:
@@ -49,7 +49,7 @@ def call_process(cmd_list):
 
 def process_in_scope(expr, files, pipe_step_doc):
     """Look if the process have already been launched with success,
-    if it's not the case it get the command line given within 
+    if it's not the case it get the command line given within
     the pipe_step_doc dictionnary, evaluate it  and launch it"""
     pipe_step_name = from_yaml(pipe_step_doc, '__NAME__')
     state_filename = os.path.join(builtins.SODA_STATE_DIR,

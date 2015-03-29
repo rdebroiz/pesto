@@ -1,7 +1,55 @@
-__DESCRIPTION__: "Echo test"
-__SCOPE__: SERIE
+__DESCRIPTION__: "Echo dynamic evaluation of scope in SCOPE_1"
+__SCOPE__: SCOPE_1
 
-__NAME__: echo_test
+__NAME__: echo_dynamic_scope1
+# The pipe char allow to yaml to see all the folowing lines with the same 
+# indentation as a litteral. see http://pyyaml.org/wiki/PyYAMLDocumentation
+# for more info.
 __CMD__: 
   - echo
-  - "${MESSAGE}?{PATIENTS_EXPR}/?{STUDIES_EXPR}/?{SERIES_EXPR} from within ${__ROOT__}"
+  - | 
+    Evaluated in scope SCOPE_1:
+    SCOPE_1 -> ?{SCOPE_1} 
+
+---
+
+__DESCRIPTION__: "Echo dynamic evaluation of scope in SCOPE_2"
+__SCOPE__: SCOPE_2
+
+__NAME__: echo_dynamic_scope2
+__CMD__: 
+  - echo
+  - | 
+    Evaluated in scope SCOPE_2:
+    SCOPE_1 -> ?{SCOPE_1} 
+    SCOPE_2 -> ?{SCOPE_2}
+
+---
+
+__DESCRIPTION__: "Echo dynamic evaluation of scope in SCOPE_3"
+__SCOPE__: SCOPE_3
+
+__NAME__: echo_dynamic_scope3
+__CMD__: 
+  - echo
+  - | 
+    Evaluated in scope SCOPE_3:
+    SCOPE_1 -> ?{SCOPE_1} 
+    SCOPE_2 -> ?{SCOPE_2}
+    SCOPE_3 -> ?{SCOPE_3} 
+
+---
+
+__DESCRIPTION__: "Echo dynamic evaluation of scope in SCOPE_4"
+__SCOPE__: SCOPE_4
+
+__NAME__: echo_dynamic_scope3
+__CMD__: 
+  - echo
+  - | 
+    Evaluated in scope SCOPE_4:
+    SCOPE_1 -> ?{SCOPE_1} 
+    SCOPE_2 -> ?{SCOPE_2}
+    SCOPE_3 -> ?{SCOPE_3}
+    SCOPE_4 -> ?{SCOPE_4}
+    files -> ?{SCOPE_1}?{SCOPE_2}?{SCOPE_3}?{SCOPE_4}

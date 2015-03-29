@@ -105,11 +105,11 @@ def evaluate_yaml_expression(value, files_in_current_scope=[]):
                     evaluated_value.add(match_eval.group(0))
             if (len(evaluated_value) != 1):
                 msg = "Bad evaluation of '{0}', within '{1}'\n"\
-                      "Matches are:{2}%s".format(match_quest.group(1),
-                                                 value,
-                                                 pformat(evaluated_value))
-                # TODO get findhow to get the message.
-                raise YamlEvaluationError(msg)
+                      "Matches are:{2}".format(match_quest.group(1),
+                                               value,
+                                               pformat(evaluated_value))
+                logging.error(msg)
+                return ""
 
             new = evaluated_value.pop()
             value = re.sub(r"\?\{" + match_quest.group(1) + r"\}", new, value)
@@ -125,7 +125,7 @@ def from_yaml(yaml_dic, key):
     try:
         value = yaml_dic[key]
     except KeyError:
-        logging.error("YAML error: key '%s' not found.")
+        logging.error("YAML error: key '%s' not found.", key)
         return ""
 
     if isinstance(value, str):

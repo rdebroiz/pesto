@@ -168,7 +168,12 @@ def main(arguments):
         scope_expr_set = set()
         pattern = from_yaml(scopes, scope)
         for f in files:
-            match = re.search(r".*?" + pattern, f)
+            try:
+                match = re.search(r".*?" + pattern, f)
+            except re.error as err:
+                logging.critical("Bad regular expression to describe scope: "
+                                 "'%s'\nerr: %s", scope, err)
+                sys.exit(1)
             if match:
                 scope_expr = match.group(0)
                 scope_expr = escape_reserved_re_char(scope_expr)
