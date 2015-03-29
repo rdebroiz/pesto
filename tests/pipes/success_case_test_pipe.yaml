@@ -52,11 +52,11 @@ __CMD__:
     SCOPE_2 -> ?{SCOPE_2}
     SCOPE_3 -> ?{SCOPE_3}
     SCOPE_4 -> ?{SCOPE_4}
-    files -> ?{SCOPE_1}?{SCOPE_2}?{SCOPE_3}?{SCOPE_4}
+    file -> ?{SCOPE_1}?{SCOPE_2}?{SCOPE_3}?{SCOPE_4}
 
 ---
 
-__DESCRIPTION__: "Echo dynamic evaluation of SCOPE_2_DIGIT from SCOPE_2_LETTER (redirecttion in SCOPE_1)"
+__DESCRIPTION__: "Echo dynamic evaluation of SCOPE_2_DIGIT from SCOPE_2_LETTER (redirection in SCOPE_1)"
 __SCOPE__: SCOPE_2_LETTER
 
 __NAME__: echo_dynamic_scope3
