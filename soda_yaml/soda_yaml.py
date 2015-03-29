@@ -75,7 +75,47 @@ def escape_reserved_re_char(string):
     return re.sub(r"(?P<char>[()*.?^\[\]\\${}+|])", r"\\\g<char>", string)
 
 
-def evaluate_yaml_expression(value, files_in_current_scope=[]):
+def evaluate_dynamic_expression(value, match, scope_expr):
+    to_evaluate = match.group(1)
+    match_redirect = re.search(r"(.*?)->(.*)", to_evaluate)
+    if match_redirect:
+        to_evaluate = match_redirect.group(1)
+        scope = match_redirect.group(2)
+        scope_expr = from_yaml(builtins.SODA_DATA_STRUCTURE, scope)
+
+    files_in_scope = [f for f in builtins.SODA_FILES_IN_ROOT
+                      if re.search(scope_expr, f)]
+
+    evaluated_value = set()
+    expression = from_yaml(builtins.SODA_DATA_STRUCTURE,
+                           to_evaluate)
+
+    for f in files_in_scope:
+        match_eval = re.search(expression, f)
+        if match_eval:
+            evaluated_value.add(match_eval.group(0))
+    if (len(evaluated_value) != 1):
+        msg = "Bad evaluation of '{0}', within '{1}'\n"\
+              "Matches are:{2}".format(match.group(1),
+                                       value,
+                                       pformat(evaluated_value))
+        logging.error(msg)
+        return ""
+
+    new = evaluated_value.pop()
+    value = re.sub(r"\?\{" + match.group(1) + r"\}", new, value)
+    return value
+
+
+def evaluate_static_expression(value, match):
+    value = re.sub(r"\$\{" + match.group(1) + r"\}",
+                   from_yaml(builtins.SODA_DATA_STRUCTURE,
+                             match.group(1)),
+                   value)
+    return value
+
+
+def evaluate_yaml_expression(value, scope_expr=''):
     """Evaluate an expression of a yaml document.
     An expression can be static: ${key} or dynamic: ?{key}
     If the expression is static it will just be replace
@@ -90,29 +130,10 @@ def evaluate_yaml_expression(value, files_in_current_scope=[]):
         match_dolls = re.search(r"\$\{(.*?)\}", value)
         match_quest = re.search(r"\?\{(.*?)\}", value)
         if(match_dolls):
-            value = re.sub(r"\$\{" + match_dolls.group(1) + r"\}",
-                           from_yaml(builtins.SODA_DATA_STRUCTURE,
-                                     match_dolls.group(1)),
-                           value)
+            value = evaluate_static_expression(value, match_dolls)
         if(match_quest):
-            to_evaluate = from_yaml(builtins.SODA_DATA_STRUCTURE,
-                                    match_quest.group(1))
-            evaluated_value = set()
-
-            for serie in files_in_current_scope:
-                match_eval = re.search(to_evaluate, serie)
-                if match_eval:
-                    evaluated_value.add(match_eval.group(0))
-            if (len(evaluated_value) != 1):
-                msg = "Bad evaluation of '{0}', within '{1}'\n"\
-                      "Matches are:{2}".format(match_quest.group(1),
-                                               value,
-                                               pformat(evaluated_value))
-                logging.error(msg)
-                return ""
-
-            new = evaluated_value.pop()
-            value = re.sub(r"\?\{" + match_quest.group(1) + r"\}", new, value)
+            value = evaluate_dynamic_expression(value,
+                                                match_quest, scope_expr)
         if(not match_dolls and not match_quest):
             all_evaluated = True
 

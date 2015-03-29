@@ -4,20 +4,21 @@
 
 SCOPE_1: scope_1.*?/
 SCOPE_2_DIGIT: scope_2_\d/
-SCOPE_2_LETTER: scope_2_\w/
+SCOPE_2_LETTER: scope_2_[a-zA-Z]/
 SCOPE_2: (${SCOPE_2_DIGIT}|${SCOPE_2_LETTER})
-SCOPE_3: scope_3.*?(${SCOPE_4})?
+SCOPE_3: scope_3-\w
 SCOPE_4: scope_4.*?$
 
 # ##############################################################################
-# MANDATORY --> ROOT path
+# MANDATORY --> __ROOT__ path
 # ##############################################################################
 
 __ROOT__: tests/test_data
 
 # ##############################################################################
-# MANDATORY --> SCOPE structure
+# MANDATORY --> __SCOPES__ structure
 # ##############################################################################
+
 __SCOPES__:
   __ROOT__: ${__ROOT__}
   SCOPE_1: ${SCOPE_1}

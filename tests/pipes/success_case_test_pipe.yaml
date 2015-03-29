@@ -1,4 +1,4 @@
-__DESCRIPTION__: "Echo dynamic evaluation of scope in SCOPE_1"
+__DESCRIPTION__: "Echo dynamic evaluation of available scopes in SCOPE_1"
 __SCOPE__: SCOPE_1
 
 __NAME__: echo_dynamic_scope1
@@ -13,7 +13,7 @@ __CMD__:
 
 ---
 
-__DESCRIPTION__: "Echo dynamic evaluation of scope in SCOPE_2"
+__DESCRIPTION__: "Echo dynamic evaluation of available scopes in SCOPE_2"
 __SCOPE__: SCOPE_2
 
 __NAME__: echo_dynamic_scope2
@@ -26,7 +26,7 @@ __CMD__:
 
 ---
 
-__DESCRIPTION__: "Echo dynamic evaluation of scope in SCOPE_3"
+__DESCRIPTION__: "Echo dynamic evaluation of available scopes in SCOPE_3"
 __SCOPE__: SCOPE_3
 
 __NAME__: echo_dynamic_scope3
@@ -40,7 +40,7 @@ __CMD__:
 
 ---
 
-__DESCRIPTION__: "Echo dynamic evaluation of scope in SCOPE_4"
+__DESCRIPTION__: "Echo dynamic evaluation of available scopes in SCOPE_4"
 __SCOPE__: SCOPE_4
 
 __NAME__: echo_dynamic_scope3
@@ -53,3 +53,19 @@ __CMD__:
     SCOPE_3 -> ?{SCOPE_3}
     SCOPE_4 -> ?{SCOPE_4}
     files -> ?{SCOPE_1}?{SCOPE_2}?{SCOPE_3}?{SCOPE_4}
+
+---
+
+__DESCRIPTION__: "Echo dynamic evaluation of SCOPE_2_DIGIT from SCOPE_2_LETTER (redirecttion in SCOPE_1)"
+__SCOPE__: SCOPE_2_LETTER
+
+__NAME__: echo_dynamic_scope3
+__CMD__: 
+  - echo
+  - | 
+    Evaluated in scope SCOPE_1 while current expression is from SCOPE_2_LETTER:
+    SCOPE_2_DIGIT  -> ?{SCOPE_2_DIGIT->SCOPE_1}
+    Evaluated in scope SCOPE_2_LETTER:
+    SCOPE_2_LETTER -> ?{SCOPE_2_LETTER}
+
+

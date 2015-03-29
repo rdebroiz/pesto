@@ -59,6 +59,7 @@ def main(arguments):
     builtins.SODA_STATE_DIR = ".soda"
     builtins.SODA_MAXWORKERS = 0
     builtins.SODA_ROOT = ""
+    builtins.SODA_FILES_IN_ROOT = list()
     from concurrent.futures.thread import threading
     builtins.SODA_LOCK = threading.Lock()
 
@@ -161,13 +162,13 @@ def main(arguments):
         for f in files:
             path = os.path.join(root, f)
             files_set.add(path)
-    files = sorted(files_set)
+    builtins.SODA_FILES_IN_ROOT = sorted(files_set)
 
     scopes = from_yaml(builtins.SODA_DATA_STRUCTURE, '__SCOPES__')
     for scope in scopes:
         scope_expr_set = set()
         pattern = from_yaml(scopes, scope)
-        for f in files:
+        for f in builtins.SODA_FILES_IN_ROOT:
             try:
                 match = re.search(r".*?" + pattern, f)
             except re.error as err:
@@ -181,7 +182,7 @@ def main(arguments):
         exprs_for_scope[scope] = sorted(scope_expr_set)
 
     logging.debug("scopes expressions:\n%s", pformat(exprs_for_scope))
-    logging.debug("files:\n%s", pformat(files))
+    logging.debug("files:\n%s", pformat(builtins.SODA_FILES_IN_ROOT))
     logging.debug("pipeline :\n%s", pformat(yaml_pipe_document))
 
     # ##############################################################################
@@ -196,8 +197,7 @@ def main(arguments):
                              "feild with a value within: %s",
                              exprs_for_scope.keys())
             sys.exit(1)
-        submit_process(exprs_for_scope[scope], files,
-                       pipe_step_doc)
+        submit_process(exprs_for_scope[scope], pipe_step_doc)
 
 # -- Main
 if __name__ == '__main__':

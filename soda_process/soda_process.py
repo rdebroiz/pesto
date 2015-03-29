@@ -15,7 +15,6 @@ import logging
 
 import os
 import sys
-import re
 
 
 def call_process(cmd_list):
@@ -47,7 +46,7 @@ def call_process(cmd_list):
     return return_code
 
 
-def process_in_scope(expr, files, pipe_step_doc):
+def process_in_scope(expr, pipe_step_doc):
     """Look if the process have already been launched with success,
     if it's not the case it get the command line given within
     the pipe_step_doc dictionnary, evaluate it  and launch it"""
@@ -61,9 +60,8 @@ def process_in_scope(expr, files, pipe_step_doc):
                 return 0
 
     cmd_list = from_yaml(pipe_step_doc, '__CMD__')
-    files = [f for f in files if re.search(expr, f)]
     try:
-        cmd_list = [evaluate_yaml_expression(arg, files_in_current_scope=files)
+        cmd_list = [evaluate_yaml_expression(arg, scope_expr=expr)
                     for arg in cmd_list]
     except YamlEvaluationError as err:
         logging.error("Unable to evaluate yaml variable:\n%s", str(err))
@@ -73,7 +71,7 @@ def process_in_scope(expr, files, pipe_step_doc):
     return return_code
 
 
-def submit_process(exprs, files, pipe_step_doc):
+def submit_process(exprs, pipe_step_doc):
     """Create a pool of thread depending on the maximum
     umber of workers (SODA_MAXWORKERS) when a worker finish its job,
     print the actual progression of this step of the pipeline
@@ -88,7 +86,6 @@ def submit_process(exprs, files, pipe_step_doc):
         for expr in exprs:
             future = executor.submit(process_in_scope,
                                      expr,
-                                     files,
                                      pipe_step_doc)
             expr_for_future[future] = expr
 
