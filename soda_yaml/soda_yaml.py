@@ -57,7 +57,7 @@ def load_all_yaml(yaml_filename):
 
 
 def dump_yaml(to_dump, yaml_filename):
-    """Dump a python object in yaml document in a thread safe context"""
+    """Dump a python object inside yaml document in a thread safe context"""
     try:
         with builtins.SODA_LOCK:
             yaml.dump(to_dump, open(yaml_filename, 'w'),
@@ -67,6 +67,12 @@ def dump_yaml(to_dump, yaml_filename):
                       yaml_filename,
                       to_dump,
                       yamlerr)
+
+
+def escape_reserved_re_char(string):
+    """Escape wit a back slash all char reserved for regular expression
+    in the given string."""
+    return re.sub(r"(?P<char>[()*.?^\[\]\\${}+|])", r"\\\g<char>", string)
 
 
 def evaluate_yaml_expression(value, files_in_current_scope=[]):
@@ -119,8 +125,9 @@ def from_yaml(yaml_dic, key):
     try:
         value = yaml_dic[key]
     except KeyError:
-        raise YamlLookUpError("YAML error: unable to "
-                              "found {0} key".format(key))
+        logging.error("YAML error: key '%s' not found.")
+        return ""
+
     if isinstance(value, str):
         value = evaluate_yaml_expression(value)
 

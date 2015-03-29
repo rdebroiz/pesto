@@ -31,7 +31,8 @@ def call_process(cmd_list):
         return_code = -1
     except subprocess.CalledProcessError as err:
         error = err.output.decode("utf-8")
-        logging.error("Fail to launch: %s\n%s", cmd_list, error)
+        logging.error("Fail to launch command: '%s'\n%s", " ".join(cmd_list), 
+                      error)
         return_code = -1
     except FileNotFoundError:
         # This exception is raised if the first arg of cmd_list is not a valid
@@ -41,7 +42,8 @@ def call_process(cmd_list):
     except TypeError as type_error:
         logging.warning("Fail to format process output:\n%s", type_error)
 
-    logging.info(output)
+    if(return_code == 0):
+        logging.info(output)
     return return_code
 
 

@@ -41,6 +41,7 @@ def main(arguments):
     from soda_process.soda_process import submit_process
     from soda_yaml.soda_yaml import load_all_yaml
     from soda_yaml.soda_yaml import from_yaml
+    from soda_yaml.soda_yaml import escape_reserved_re_char
 
     import os
     import sys
@@ -169,7 +170,9 @@ def main(arguments):
         for f in files:
             match = re.search(r".*?" + pattern, f)
             if match:
-                scope_expr_set.add(match.group(0))
+                scope_expr = match.group(0)
+                scope_expr = escape_reserved_re_char(scope_expr)
+                scope_expr_set.add(scope_expr)
         exprs_for_scope[scope] = sorted(scope_expr_set)
 
     logging.debug("scopes expressions:\n%s", pformat(exprs_for_scope))

@@ -2,33 +2,29 @@
 # Helpers:
 # ##############################################################################
 
-PATIENTS_EXPR: (${FOO_PATIENT}|${BAR_PATIENT})
-STUDIES_EXPR: (${FOO_STUDY}|${BAR_STUDY})
-SERIES_EXPR: (${FOO_SERIES}|${BAR_SERIES})
-
-FOO_PATIENT: P_..
-BAR_PATIENT: .._P
-FOO_STUDY: STUDY_\d
-BAR_STUDY: STUDY_\w
-FOO_SERIES: ric
-BAR_SERIES: roll
-
-MESSAGE: "We are processing: "
+SCOPE_1_re: scope_1.*?/
+SCOPE_2_DIGIT_re: scope_2_\d
+SCOPE_2_LETTER_re: scope_2_\w
+SCOPE_2_re: (${SCOPE_2_DIGIT_re}|${SCOPE_2_LETTER_re})
+SCOPE_3_re: scope_3
+SCOPE_4_re: scope_4
 
 # ##############################################################################
 # MANDATORY --> ROOT path
 # ##############################################################################
 
-__ROOT__: tests/test_folder_nested
+__ROOT__: tests/test_data
 
 # ##############################################################################
 # MANDATORY --> SCOPE structure
 # ##############################################################################
 __SCOPES__:
-  ROOT: ${__ROOT__}
-  PATIENT: ${PATIENTS_EXPR}
-  STUDY: ${STUDIES_EXPR}
-  SERIE: ${SERIES_EXPR}
+  SCOPE_1: ${SCOPE_1_re}
+  SCOPE_2_DIGIT: ${SCOPE_2_DIGIT_re}
+  SCOPE_2_LETTER: ${SCOPE_2_LETTER_re}
+  SCOPE_2: ${SCOPE_2_re}
+  SCOPE_3: ${SCOPE_3_re}
+  SCOPE_4: ${SCOPE_4_re}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

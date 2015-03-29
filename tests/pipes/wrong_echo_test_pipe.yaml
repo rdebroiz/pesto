@@ -1,7 +1,0 @@
-__DESCRIPTION__: "Wrong echo test"
-__SCOPE__: PATIENT
-
-__NAME__: wrong_echo_test
-__CMD__: 
-  - wrong_echo
-  - "some message"
