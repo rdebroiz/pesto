@@ -12,23 +12,29 @@ except ImportError as err:
 
 
 class YamlEvaluationError(LookupError):
-    """An error raised when the evaluation of ${statitc_key} or
-    ?{dynamic_key} faile"""
+    """
+    An error raised when the evaluation of ${statitc_key} or
+    ?{dynamic_key} faile
+    """
     def __init__(self, arg):
         super(YamlEvaluationError, self).__init__()
         self.arg = arg
 
 
 class YamlLookUpError(LookupError):
-    """An error raised when a
-    key is not found within a yaml dicionnary"""
+    """
+    An error raised when a
+    key is not found within a yaml dicionnary
+    """
     def __init__(self, arg):
         super(YamlLookUpError, self).__init__()
         self.arg = arg
 
 
 def load_yaml(yaml_filename):
-    """Load a single yaml document from a file in a thread safe context."""
+    """
+    Load a single yaml document from a file in a thread safe context.
+    """
     try:
         with builtins.SODA_LOCK:
             yaml_doc = yaml.load(open(yaml_filename, 'r'))
@@ -42,7 +48,9 @@ def load_yaml(yaml_filename):
 
 
 def load_all_yaml(yaml_filename):
-    """Load a list of yaml documents from a file in a thread safe context."""
+    """
+    Load a list of yaml documents from a file in a thread safe context.
+    """
     try:
         with builtins.SODA_LOCK:
             yaml_docs = yaml.load_all(open(yaml_filename, 'r'))
@@ -57,7 +65,9 @@ def load_all_yaml(yaml_filename):
 
 
 def dump_yaml(to_dump, yaml_filename):
-    """Dump a python object inside yaml document in a thread safe context"""
+    """
+    Dump a python object inside a yaml document in a thread safe context
+    """
     try:
         with builtins.SODA_LOCK:
             yaml.dump(to_dump, open(yaml_filename, 'w'),
@@ -70,14 +80,36 @@ def dump_yaml(to_dump, yaml_filename):
 
 
 def escape_reserved_re_char(string):
-    """Escape wit a back slash all char reserved for regular expression
-    in the given string."""
+    """
+    Escape with a backslash characters reserved by regular expressions
+    in the given string.
+    """
     return re.sub(r"(?P<char>[()*.?^\[\]\\${}+|])", r"\\\g<char>", string)
 
 
-def evaluate_dynamic_expression(value, match, scope_expr):
-    to_evaluate = match.group(1)
+def evaluate_dynamic_expression(yaml_string, to_evaluate, scope_expr):
+    """
+    First parse the ?{to_evaluate} key,
+    if there is a match for '->' the 'to_evaluate' is replaced
+    by what precedding '->'.
+    What following '->' is considered as a key entry in
+    'SODA_DATA_STRUCTURE' and 'scope_expr' is replaced by the value
+    corresponding to that key.
+
+    Get of all files from 'SODA_FILES_IN_ROOT' having a path matching
+    the regular expression 'scope_expr'
+
+    'to_evaluate' is then considered as a key enry in
+    'SODA_DATA_STRUCTURE'. Seek for a match between
+    the regular expression  given by that key and list of
+    filenames computed before. Raise an error if more than one match
+    have been found.
+
+    Finally substitute the ?{to_evaluate} by what have been found
+    in 'yaml_string'
+    """
     match_redirect = re.search(r"(.*?)->(.*)", to_evaluate)
+    to_substitute = to_evaluate
     if match_redirect:
         to_evaluate = match_redirect.group(1)
         scope = match_redirect.group(2)
@@ -96,53 +128,60 @@ def evaluate_dynamic_expression(value, match, scope_expr):
             evaluated_value.add(match_eval.group(0))
     if (len(evaluated_value) != 1):
         msg = "Bad evaluation of '{0}', within '{1}'\n"\
-              "Matches are:{2}".format(match.group(1),
-                                       value,
+              "Matches are:{2}".format(to_substitute,
+                                       yaml_string,
                                        pformat(evaluated_value))
         logging.error(msg)
         return ""
 
     new = evaluated_value.pop()
-    value = re.sub(r"\?\{" + match.group(1) + r"\}", new, value)
-    return value
+    yaml_string = re.sub(r"\?\{" + to_substitute + r"\}", new, yaml_string)
+    return yaml_string
 
 
-def evaluate_static_expression(value, match):
-    value = re.sub(r"\$\{" + match.group(1) + r"\}",
-                   from_yaml(builtins.SODA_DATA_STRUCTURE,
-                             match.group(1)),
-                   value)
-    return value
+def evaluate_static_expression(yaml_string, to_evaluate):
+    """
+    Subsitute the ${to_evaluate} key by the associated value
+    found in SODA_DATA_STRUCTURE in yaml_string.
+    """
+    yaml_string = re.sub(r"\$\{" + to_evaluate + r"\}",
+                         from_yaml(builtins.SODA_DATA_STRUCTURE,
+                                   to_evaluate),
+                         yaml_string)
+    return yaml_string
 
 
-def evaluate_yaml_expression(value, scope_expr=''):
-    """Evaluate an expression of a yaml document.
-    An expression can be static: ${key} or dynamic: ?{key}
-    If the expression is static it will just be replace
-    by the value corresponding to the given key in the dictionnary
-    SODA_DATA_STRUCTURE (the first document in the yaml config files).
-    If the expression is dynamic it will be replace by the string
-    matching the regular expression give by the value corresponding
-    to the given key in SODA_DATA_STRUCTURE with all the path of each file
-    found in the current scope."""
+def evaluate_yaml_expression(yaml_string, scope_expr=''):
+    """
+    Try to evaluate staticly or dynamicly the given yaml string
+    while a static ${key} or a dynamic ?{key} has been found inside.
+
+    scope_expr is given to is needed by evaluate_dynamic_expression
+    to know in which files inside which scope seeking for the regular
+    expression associated to the dynamic ?{key}
+    """
     all_evaluated = False
     while(not all_evaluated):
-        match_dolls = re.search(r"\$\{(.*?)\}", value)
-        match_quest = re.search(r"\?\{(.*?)\}", value)
+        match_dolls = re.search(r"\$\{(.*?)\}", yaml_string)
+        match_quest = re.search(r"\?\{(.*?)\}", yaml_string)
         if(match_dolls):
-            value = evaluate_static_expression(value, match_dolls)
+            yaml_string = evaluate_static_expression(yaml_string,
+                                                     match_dolls.group(1))
         if(match_quest):
-            value = evaluate_dynamic_expression(value,
-                                                match_quest, scope_expr)
+            yaml_string = evaluate_dynamic_expression(yaml_string,
+                                                      match_quest.group(1),
+                                                      scope_expr)
         if(not match_dolls and not match_quest):
             all_evaluated = True
 
-    return value
+    return yaml_string
 
 
 def from_yaml(yaml_dic, key):
-    """Return the value (evaluated) corresponding to the key 'key'
-    in the dictionnary yaml_dic"""
+    """
+    Return the value (evaluated) corresponding to the key 'key'
+    in the dictionnary yaml_dic
+    """
     try:
         value = yaml_dic[key]
     except KeyError:
