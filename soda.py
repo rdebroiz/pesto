@@ -19,10 +19,10 @@ Options:
         Must be in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
         [default: INFO]
     <pipe.yaml>
-        A yaml document starting with the data structure description
+        A yaml file starting with the data structure description
         and describing the pipeline.
     <other_pipes.yaml>...
-        An  ordered list of yaml documets describing the pipeline.
+        An ordered list of yaml files describing the pipeline.
 
     -c --clean
         Clean  current directory from soda generated files.

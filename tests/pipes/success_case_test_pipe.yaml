@@ -43,7 +43,7 @@ __CMD__:
 __DESCRIPTION__: "Echo dynamic evaluation of available scopes in SCOPE_4"
 __SCOPE__: SCOPE_4
 
-__NAME__: echo_dynamic_scope3
+__NAME__: echo_dynamic_scope4
 __CMD__: 
   - echo
   - | 
@@ -59,7 +59,7 @@ __CMD__:
 __DESCRIPTION__: "Echo dynamic evaluation of SCOPE_2_DIGIT from SCOPE_2_LETTER (redirection in SCOPE_1)"
 __SCOPE__: SCOPE_2_LETTER
 
-__NAME__: echo_dynamic_scope3
+__NAME__: echo_dynamic_scope2_digit_from_scope2_letter
 __CMD__: 
   - echo
   - | 
