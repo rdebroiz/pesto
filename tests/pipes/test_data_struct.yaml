@@ -6,7 +6,7 @@ SCOPE_1: scope_1.*?/
 SCOPE_2_DIGIT: scope_2_\d/
 SCOPE_2_LETTER: scope_2_\w/
 SCOPE_2: (${SCOPE_2_DIGIT}|${SCOPE_2_LETTER})
-SCOPE_3: scope_3.*?${SCOPE_4}?
+SCOPE_3: scope_3.*?(${SCOPE_4})?
 SCOPE_4: scope_4.*?$
 
 # ##############################################################################
