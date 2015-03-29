@@ -78,9 +78,11 @@ def process_in_scope(expr, pipe_step_doc):
 def submit_process(exprs, pipe_step_doc):
     """
     Create a pool of thread depending on the maximum
-    umber of workers (SODA_MAXWORKERS) when a worker finish its job,
-    print the actual progression of this step of the pipeline
-    ans write the retuen code of the command line in a yaml doc
+    number of workers (SODA_MAXWORKERS).
+
+    When a worker finish its job,
+    print the progression of the actual step of the pipeline
+    ansd write the return code of the command line in a yaml doc
     (located at SODA_STATE_DIR).
     """
     descrition = from_yaml(pipe_step_doc, '__DESCRIPTION__')
