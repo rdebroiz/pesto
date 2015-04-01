@@ -66,7 +66,6 @@ def process_in_scope(current_expr, pipe_step_doc):
 
     cmd_list = from_yaml(pipe_step_doc, '__CMD__')
     try:
-        print("current_expr in process_in_scope", current_expr)
         cmd_list = [evaluate_yaml_expression(arg, current_expr=current_expr)
                     for arg in cmd_list]
     except YamlEvaluationError as err:
