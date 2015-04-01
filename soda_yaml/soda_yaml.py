@@ -171,7 +171,8 @@ def evaluate_yaml_expression(yaml_string, current_expr=''):
         except TypeError:
             logging.error("Attempt to evaluate non string expression "
                           "from yaml document: %s", yaml_string)
-            return ""
+            raise
+            
         if(match_dolls):
             yaml_string = evaluate_static_expression(yaml_string,
                                                      match_dolls.group(1),

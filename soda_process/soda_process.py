@@ -48,21 +48,16 @@ def call_process(cmd_list):
     return return_code
 
 
-def process_in_scope(current_expr, pipe_step_doc):
+def process_in_scope(current_expr, pipe_step_doc, result_for_expr):
     """
     Look if the process have already been launched with success,
 
     If it's not the case, it get the command line given within
     the 'pipe_step_doc' dictionnary, evaluate it  and launch it
     """
-    pipe_step_name = from_yaml(pipe_step_doc, '__NAME__')
-    state_filename = os.path.join(builtins.SODA_STATE_DIR,
-                                  pipe_step_name + ".yaml")
-    if(os.path.exists(state_filename)):
-        states = load_yaml(state_filename)
-        if current_expr in states.keys():
-            if not states[current_expr]:
-                return 0
+    if current_expr in result_for_expr.keys():
+        if not result_for_expr[current_expr]:
+            return 0
 
     cmd_list = from_yaml(pipe_step_doc, '__CMD__')
     try:
@@ -70,6 +65,10 @@ def process_in_scope(current_expr, pipe_step_doc):
                     for arg in cmd_list]
     except YamlEvaluationError as err:
         logging.error("Unable to evaluate yaml variable:\n%s", str(err))
+        return -1
+    # we had a non string arg, something wrong happen so we return -1.
+    except TypeError:
+        logging.error("Error in commmand: %s", cmd_list)
         return -1
 
     return_code = call_process(cmd_list)
@@ -90,26 +89,32 @@ def submit_process(exprs, pipe_step_doc):
     print("{0}: {1}%\033[K\r".format(descrition, 0), end="")
     sys.stdout.flush()
 
+    result_for_expr = dict()
+    pipe_step_name = from_yaml(pipe_step_doc, '__NAME__')
+    result_for_expr_filename = os.path.join(builtins.SODA_STATE_DIR,
+                                            pipe_step_name + ".yaml")
+    if(os.path.exists(result_for_expr_filename)):
+        result_for_expr = load_yaml(result_for_expr_filename)
+
     with ThreadPoolExecutor(max_workers=builtins.SODA_MAXWORKERS) as executor:
         expr_for_future = dict()
         for current_expr in exprs:
             future = executor.submit(process_in_scope,
                                      current_expr,
-                                     pipe_step_doc)
+                                     pipe_step_doc,
+                                     result_for_expr)
             expr_for_future[future] = current_expr
 
         progression = 1
-        pipe_step_name = from_yaml(pipe_step_doc, '__NAME__')
-        state_filename = os.path.join(builtins.SODA_STATE_DIR,
-                                      pipe_step_name + ".yaml")
-        states = dict()
+
         for future in futures.as_completed(expr_for_future.keys()):
             # Get the return code of the cmd and store it.
             expr = expr_for_future[future]
-            # try:
-            states[expr] = future.result()
 
-            if (states[expr] == 0):
+            res = future.result()
+            result_for_expr[expr] = res
+
+            if (res == 0):
                 with builtins.SODA_LOCK:
                     print("{0}: {1:.0%}\033[K\r".format(descrition,
                           progression / len(exprs)), end="")
@@ -117,7 +122,7 @@ def submit_process(exprs, pipe_step_doc):
                 progression += 1
 
             # Dump the retrun codes in a yaml doc
-            dump_yaml(states, state_filename)
+            dump_yaml(result_for_expr, result_for_expr_filename)
 
         # Rewrite an empty line
         print("")

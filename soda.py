@@ -147,7 +147,7 @@ def main(arguments):
     try:
         builtins.SODA_DATA_STRUCTURE = yaml_pipe_document.pop(0)
     except IndexError:
-        logging.error("Empty <pipe.yaml> file.")
+        logging.critical("Empty <pipe.yaml> file.")
         sys.exit(1)
 
     logging.debug("'DATA_STRUCTURE' used:\n%s",

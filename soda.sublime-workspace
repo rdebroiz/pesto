@@ -523,7 +523,7 @@
 			"file": "soda.py",
 			"settings":
 			{
-				"buffer_size": 8124,
+				"buffer_size": 8127,
 				"line_ending": "Unix"
 			}
 		},
@@ -531,7 +531,7 @@
 			"file": "soda_process/soda_process.py",
 			"settings":
 			{
-				"buffer_size": 4222,
+				"buffer_size": 4203,
 				"line_ending": "Unix"
 			}
 		},
@@ -547,7 +547,7 @@
 			"file": "soda_yaml/soda_yaml.py",
 			"settings":
 			{
-				"buffer_size": 6481,
+				"buffer_size": 6686,
 				"line_ending": "Unix"
 			}
 		},
@@ -976,15 +976,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 8124,
+						"buffer_size": 8127,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								5598,
-								5598
+								7964,
+								7964
 							]
 						],
 						"settings":
@@ -994,10 +994,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 2535.0,
+						"translation.y": 2242.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 1,
 					"type": "text"
 				}
 			]
@@ -1012,15 +1012,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 4222,
+						"buffer_size": 4203,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2881,
-								2881
+								1986,
+								1986
 							]
 						],
 						"settings":
@@ -1030,10 +1030,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 180.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 0,
 					"type": "text"
 				},
 				{
@@ -1063,7 +1063,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 2,
 					"type": "text"
 				}
 			]
@@ -1078,15 +1078,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 6481,
+						"buffer_size": 6686,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								4344,
-								4344
+								5661,
+								5661
 							]
 						],
 						"settings":
@@ -1096,10 +1096,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 660.0,
+						"translation.y": 495.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
@@ -1197,8 +1197,8 @@
 		"cols":
 		[
 			0.0,
-			0.370527306967,
-			0.712799600636,
+			0.338833482487,
+			0.672621696923,
 			1.0
 		],
 		"rows":
@@ -1262,7 +1262,7 @@
 		],
 		"width": 0.0
 	},
-	"selected_group": 0,
+	"selected_group": 1,
 	"settings":
 	{
 	},
@@ -1270,7 +1270,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 436.0,
+	"side_bar_width": 281.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{
