@@ -48,24 +48,26 @@ def call_process(cmd_list):
     return return_code
 
 
-def process_in_scope(expr, pipe_step_doc):
+def process_in_scope(current_expr, pipe_step_doc):
     """
     Look if the process have already been launched with success,
-    if it's not the case it get the command line given within
-    the pipe_step_doc dictionnary, evaluate it  and launch it
+
+    If it's not the case, it get the command line given within
+    the 'pipe_step_doc' dictionnary, evaluate it  and launch it
     """
     pipe_step_name = from_yaml(pipe_step_doc, '__NAME__')
     state_filename = os.path.join(builtins.SODA_STATE_DIR,
                                   pipe_step_name + ".yaml")
     if(os.path.exists(state_filename)):
         states = load_yaml(state_filename)
-        if expr in states.keys():
-            if not states[expr]:
+        if current_expr in states.keys():
+            if not states[current_expr]:
                 return 0
 
     cmd_list = from_yaml(pipe_step_doc, '__CMD__')
     try:
-        cmd_list = [evaluate_yaml_expression(arg, scope_expr=expr)
+        print("current_expr in process_in_scope", current_expr)
+        cmd_list = [evaluate_yaml_expression(arg, current_expr=current_expr)
                     for arg in cmd_list]
     except YamlEvaluationError as err:
         logging.error("Unable to evaluate yaml variable:\n%s", str(err))
@@ -78,12 +80,12 @@ def process_in_scope(expr, pipe_step_doc):
 def submit_process(exprs, pipe_step_doc):
     """
     Create a pool of thread depending on the maximum
-    number of workers (SODA_MAXWORKERS).
+    number of workers ('SODA_MAXWORKERS').
 
     When a worker finish its job,
     print the progression of the actual step of the pipeline
     ansd write the return code of the command line in a yaml doc
-    (located at SODA_STATE_DIR).
+    (located at 'SODA_STATE_DIR').
     """
     descrition = from_yaml(pipe_step_doc, '__DESCRIPTION__')
     print("{0}: {1}%\033[K\r".format(descrition, 0), end="")
@@ -91,11 +93,11 @@ def submit_process(exprs, pipe_step_doc):
 
     with ThreadPoolExecutor(max_workers=builtins.SODA_MAXWORKERS) as executor:
         expr_for_future = dict()
-        for expr in exprs:
+        for current_expr in exprs:
             future = executor.submit(process_in_scope,
-                                     expr,
+                                     current_expr,
                                      pipe_step_doc)
-            expr_for_future[future] = expr
+            expr_for_future[future] = current_expr
 
         progression = 1
         pipe_step_name = from_yaml(pipe_step_doc, '__NAME__')

@@ -201,10 +201,12 @@ def main(arguments):
 
 # -- Main
 if __name__ == '__main__':
+    import sys
     try:
         from docopt import docopt
     except ImportError as err:
         print("Soda need docopt", err)
+        sys.exit(1)
 
     arguments = docopt(__doc__, version='soda 1.0')
     main(arguments)

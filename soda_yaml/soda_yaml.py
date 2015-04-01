@@ -9,6 +9,7 @@ try:
     import yaml
 except ImportError as err:
     print("Soda need pyyaml", err)
+    sys.exit(1)
 
 
 class YamlEvaluationError(LookupError):
@@ -41,7 +42,7 @@ def load_yaml(yaml_filename):
     except OSError as oserr:
         logging.error("Loading %s: %s", yaml_filename, oserr)
         sys.exit(1)
-    except (yaml.error.YAMLError) as yamlerr:
+    except (yaml.error.YAMLError, yaml.scanner.ScannerError) as yamlerr:
         logging.error("Loading %s: %s:", yaml_filename, yamlerr)
         sys.exit(1)
     return yaml_doc
@@ -87,17 +88,17 @@ def escape_reserved_re_char(string):
     return re.sub(r"(?P<char>[()*.?^\[\]\\${}+|])", r"\\\g<char>", string)
 
 
-def evaluate_dynamic_expression(yaml_string, to_evaluate, scope_expr):
+def evaluate_dynamic_expression(yaml_string, to_evaluate, current_expr):
     """
     First parse the ?{to_evaluate} key,
     if there is a match for '->' 'to_evaluate' is replaced
     by what is precedding '->'.
     What is following '->' is considered as a key entry in
-    'SODA_DATA_STRUCTURE', 'scope_expr' is replaced by the value
+    'SODA_DATA_STRUCTURE', 'current_expr' is replaced by the value
     corresponding to that key.
 
     Then get of all files from 'SODA_FILES_IN_ROOT' having a path matching
-    the regular expression 'scope_expr'
+    the regular expression 'current_expr'
 
     'to_evaluate' is then considered as a key entry in
     'SODA_DATA_STRUCTURE'. Later we seek for a match between
@@ -113,14 +114,16 @@ def evaluate_dynamic_expression(yaml_string, to_evaluate, scope_expr):
     if match_redirect:
         to_evaluate = match_redirect.group(1)
         scope = match_redirect.group(2)
-        scope_expr = from_yaml(builtins.SODA_DATA_STRUCTURE, scope)
+        current_expr = from_yaml(builtins.SODA_DATA_STRUCTURE, scope,
+                                 current_expr=current_expr)
 
     files_in_scope = [f for f in builtins.SODA_FILES_IN_ROOT
-                      if re.search(scope_expr, f)]
+                      if re.search(current_expr, f)]
 
     evaluated_value = set()
     expression = from_yaml(builtins.SODA_DATA_STRUCTURE,
-                           to_evaluate)
+                           to_evaluate,
+                           current_expr=current_expr)
 
     for f in files_in_scope:
         match_eval = re.search(expression, f)
@@ -139,24 +142,24 @@ def evaluate_dynamic_expression(yaml_string, to_evaluate, scope_expr):
     return yaml_string
 
 
-def evaluate_static_expression(yaml_string, to_evaluate):
+def evaluate_static_expression(yaml_string, to_evaluate, current_expr=''):
     """
     Subsitute the ${to_evaluate} key by the associated value
     found in SODA_DATA_STRUCTURE in 'yaml_string'.
     """
     yaml_string = re.sub(r"\$\{" + to_evaluate + r"\}",
-                         from_yaml(builtins.SODA_DATA_STRUCTURE,
-                                   to_evaluate),
+                         from_yaml(builtins.SODA_DATA_STRUCTURE, to_evaluate,
+                                   current_expr=current_expr),
                          yaml_string)
     return yaml_string
 
 
-def evaluate_yaml_expression(yaml_string, scope_expr=''):
+def evaluate_yaml_expression(yaml_string, current_expr=''):
     """
     Try to evaluate staticly or dynamicly the given yaml string
     while a static ${key} or a dynamic ?{key} has been found inside.
 
-    'scope_expr' is needed by 'evaluate_dynamic_expression()'
+    'current_expr' is needed by 'evaluate_dynamic_expression()'
     to know in which files inside which scope seeking for a match
     with the regular expression associated to the dynamic ?{key}
     """
@@ -166,18 +169,19 @@ def evaluate_yaml_expression(yaml_string, scope_expr=''):
         match_quest = re.search(r"\?\{(.*?)\}", yaml_string)
         if(match_dolls):
             yaml_string = evaluate_static_expression(yaml_string,
-                                                     match_dolls.group(1))
+                                                     match_dolls.group(1),
+                                                     current_expr)
         if(match_quest):
             yaml_string = evaluate_dynamic_expression(yaml_string,
                                                       match_quest.group(1),
-                                                      scope_expr)
+                                                      current_expr)
         if(not match_dolls and not match_quest):
             all_evaluated = True
 
     return yaml_string
 
 
-def from_yaml(yaml_dic, key):
+def from_yaml(yaml_dic, key, current_expr=''):
     """
     Return the value (evaluated) corresponding to the key 'key'
     in the yaml_dic dictionary
@@ -189,6 +193,6 @@ def from_yaml(yaml_dic, key):
         return ""
 
     if isinstance(value, str):
-        value = evaluate_yaml_expression(value)
+        value = evaluate_yaml_expression(value, current_expr)
 
     return value

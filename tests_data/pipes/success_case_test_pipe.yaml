@@ -67,5 +67,3 @@ __CMD__:
     SCOPE_2_DIGIT  -> ?{SCOPE_2_DIGIT->SCOPE_1}
     Evaluated in scope SCOPE_2_LETTER:
     SCOPE_2_LETTER -> ?{SCOPE_2_LETTER}
-
-
