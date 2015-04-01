@@ -42,7 +42,7 @@ def load_yaml(yaml_filename):
     except OSError as oserr:
         logging.error("Loading %s: %s", yaml_filename, oserr)
         sys.exit(1)
-    except (yaml.error.YAMLError, yaml.scanner.ScannerError) as yamlerr:
+    except (yaml.YAMLError, yaml.scanner.ScannerError) as yamlerr:
         logging.error("Loading %s: %s:", yaml_filename, yamlerr)
         sys.exit(1)
     return yaml_doc
@@ -59,7 +59,7 @@ def load_all_yaml(yaml_filename):
     except OSError as oserr:
         logging.error("Loading %s: %s", yaml_filename, oserr)
         sys.exit(1)
-    except (yaml.error.YAMLError) as yamlerr:
+    except (yaml.YAMLError) as yamlerr:
         logging.error("Loading %s: %s:", yaml_filename, yamlerr)
         sys.exit(1)
     return list(yaml_docs)
@@ -165,8 +165,13 @@ def evaluate_yaml_expression(yaml_string, current_expr=''):
     """
     all_evaluated = False
     while(not all_evaluated):
-        match_dolls = re.search(r"\$\{(.*?)\}", yaml_string)
-        match_quest = re.search(r"\?\{(.*?)\}", yaml_string)
+        try:
+            match_dolls = re.search(r"\$\{(.*?)\}", yaml_string)
+            match_quest = re.search(r"\?\{(.*?)\}", yaml_string)
+        except TypeError:
+            logging.error("Attempt to evaluate non string expression "
+                          "from yaml document: %s", yaml_string)
+            return ""
         if(match_dolls):
             yaml_string = evaluate_static_expression(yaml_string,
                                                      match_dolls.group(1),

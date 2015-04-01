@@ -144,9 +144,15 @@ def main(arguments):
     # ##############################################################################
 
     yaml_pipe_document = load_all_yaml(arguments['<pipe.yaml>'])
-    builtins.SODA_DATA_STRUCTURE = yaml_pipe_document.pop(0)
+    try:
+        builtins.SODA_DATA_STRUCTURE = yaml_pipe_document.pop(0)
+    except IndexError:
+        logging.error("Empty <pipe.yaml> file.")
+        sys.exit(1)
+
     logging.debug("'DATA_STRUCTURE' used:\n%s",
                   pformat(builtins.SODA_DATA_STRUCTURE))
+
     for other_pipe in arguments['<other_pipes.yaml>']:
         yaml_pipe_document += load_all_yaml(other_pipe)
 
