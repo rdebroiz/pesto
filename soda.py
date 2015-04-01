@@ -195,14 +195,32 @@ def main(arguments):
     # Submit process
     # ##############################################################################
 
+    # check pipeline integrity:
+    for pipe_step_doc in yaml_pipe_document:
+        try:
+            scope = from_yaml(pipe_step_doc, '__SCOPE__')
+            description = from_yaml(pipe_step_doc, '__DESCRIPTION__')
+            name = from_yaml(pipe_step_doc, '__NAME__')
+            cmd = from_yaml(pipe_step_doc, '__CMD__')
+            assert(scope is not None and description is not None
+                   and name is not None and cmd is not None)
+            assert(scope is not "" and description is not ""
+                   and name is not "" and cmd is not [])
+            if scope not in exprs_for_scope.keys():
+                logging.critical("Bad pipeline configuration file.\n"
+                                 "Each of your pipeline step need a __SCOPE__ "
+                                 "feild with a value within: %s",
+                                 exprs_for_scope.keys())
+                sys.exit(1)
+        except (TypeError, AssertionError):
+            logging.critical("Probleme detected at pipe step number %s,"
+                             " be sure to have correct '__DESCRIPTION__'"
+                             ", '__SCOPE__', '__NAME__', and '__CMD__' keys.",
+                             yaml_pipe_document.index(pipe_step_doc))
+            sys.exit(1)
+
     for pipe_step_doc in yaml_pipe_document:
         scope = from_yaml(pipe_step_doc, '__SCOPE__')
-        if scope not in exprs_for_scope.keys():
-            logging.critical("Bad pipeline configuration file.\n"
-                             "Each of your pipeline step need a __SCOPE__ "
-                             "feild with a value within: %s",
-                             exprs_for_scope.keys())
-            sys.exit(1)
         submit_process(exprs_for_scope[scope], pipe_step_doc)
 
 # -- Main
