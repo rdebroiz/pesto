@@ -1,5 +1,5 @@
 __DESCRIPTION__: "Wrong command name"
-__SCOPE__: __ROOT__
+__SCOPE__: SCOPE_1
 
 __NAME__: wrong_command_name
 __CMD__: 
@@ -9,7 +9,7 @@ __CMD__:
 ---
 
 __DESCRIPTION__: "Invalid argument"
-__SCOPE__: __ROOT__
+__SCOPE__: SCOPE_1
 
 __NAME__: invalid_argument
 __CMD__: 

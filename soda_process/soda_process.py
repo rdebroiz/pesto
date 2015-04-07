@@ -17,6 +17,12 @@ import os
 import sys
 
 
+OKGREEN = '\033[92m'
+FAIL = '\033[91m'
+ENDC = '\033[0m'
+RETURN = '\033[K\r'
+
+
 def call_process(cmd_list):
     """
     Execute a command line from a list of arguments
@@ -86,7 +92,7 @@ def submit_process(exprs, pipe_step_doc):
     (located at 'SODA_STATE_DIR').
     """
     descrition = from_yaml(pipe_step_doc, '__DESCRIPTION__')
-    print("{0}: {1}%\033[K\r".format(descrition, 0), end="")
+    print("{0}: {1}%{2}".format(descrition, 0, RETURN), end="")
     sys.stdout.flush()
 
     result_for_expr = dict()
@@ -105,8 +111,8 @@ def submit_process(exprs, pipe_step_doc):
                                      result_for_expr)
             expr_for_future[future] = current_expr
 
-        progression = 1
-
+        progression = 0
+        col = OKGREEN
         for future in futures.as_completed(expr_for_future.keys()):
             # Get the return code of the cmd and store it.
             expr = expr_for_future[future]
@@ -115,11 +121,17 @@ def submit_process(exprs, pipe_step_doc):
             result_for_expr[expr] = res
 
             if (res == 0):
-                with builtins.SODA_LOCK:
-                    print("{0}: {1:.0%}\033[K\r".format(descrition,
-                          progression / len(exprs)), end="")
-                    # sys.stdout.flush()
                 progression += 1
+            else:
+                col = FAIL
+            with builtins.SODA_LOCK:
+                    print("{0}{1}: {2:.0%}{3}{4}".format(
+                          col,
+                          descrition,
+                          progression / len(exprs),
+                          ENDC,
+                          RETURN
+                          ), end="")
 
             # Dump the retrun codes in a yaml doc
             dump_yaml(result_for_expr, result_for_expr_filename)

@@ -103,7 +103,9 @@ def main(arguments):
     console = logging.StreamHandler()
     console.setLevel(logging.ERROR)
     # set a format which is simpler for console use
-    formatter = logging.Formatter('[%(levelname)s]: %(message)s')
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    formatter = logging.Formatter(BOLD + '[%(levelname)s]: %(message)s' + ENDC)
     # tell the handler to use this format
     console.setFormatter(formatter)
     # add the handler to the root logger
