@@ -59,3 +59,7 @@ target/
 #soda stuff
 soda.log
 .soda/
+
+#sublibe-text
+*.sublime-project
+*.sublime-workspace
