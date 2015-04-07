@@ -5,7 +5,7 @@
 Usage:
     soda [-l <log_level> | --log <log_level>]
          [-w <workers> | --workers <workers>]
-         <pipe.yaml> [<other_pipes.yaml>...]
+         <pipe.yaml>
     soda -c | --clean
     soda -h | --help
     soda -v |--version
@@ -21,8 +21,6 @@ Options:
     <pipe.yaml>
         A yaml file starting with the data structure description
         and describing the pipeline.
-    <other_pipes.yaml>...
-        An ordered list of yaml files describing the pipeline.
 
     -c --clean
         Clean  current directory from soda generated files.
@@ -155,8 +153,29 @@ def main(arguments):
     logging.debug("'DATA_STRUCTURE' used:\n%s",
                   pformat(builtins.SODA_DATA_STRUCTURE))
 
-    for other_pipe in arguments['<other_pipes.yaml>']:
-        yaml_pipe_document += load_all_yaml(other_pipe)
+    steps = list()
+    for step in yaml_pipe_document:
+        try:
+            if ('__FILE__' in step):
+                pipe_path = step['__FILE__']
+                # pipe_path is not absolu
+                if(not os.path.exists(pipe_path)):
+                    base = os.path.dirname(arguments['<pipe.yaml>'])
+                    pipe_path = os.path.join(base, pipe_path)
+
+                # we tried to get an abs path from basedir of <pipe.yaml>
+                # and the given path.
+                if(not os.path.exists(pipe_path)):
+                    logging.critical("'%s' not found.", step['__FILE__'])
+                    sys.exit(1)
+
+                steps += load_all_yaml(pipe_path)
+            else:
+                steps += step
+        except TypeError:
+            if(step is None):
+                logging.critical("Bad pipeline document.")
+                sys.exit(1)
 
     # ##############################################################################
     # construct Data structure
@@ -191,19 +210,19 @@ def main(arguments):
 
     logging.debug("scopes expressions:\n%s", pformat(exprs_for_scope))
     logging.debug("files:\n%s", pformat(builtins.SODA_FILES_IN_ROOT))
-    logging.debug("pipeline :\n%s", pformat(yaml_pipe_document))
+    logging.debug("pipeline :\n%s", pformat(steps))
 
     # ##############################################################################
     # Submit process
     # ##############################################################################
 
     # check pipeline integrity:
-    for pipe_step_doc in yaml_pipe_document:
+    for step_document in steps:
         try:
-            scope = from_yaml(pipe_step_doc, '__SCOPE__')
-            description = from_yaml(pipe_step_doc, '__DESCRIPTION__')
-            name = from_yaml(pipe_step_doc, '__NAME__')
-            cmd = from_yaml(pipe_step_doc, '__CMD__')
+            scope = from_yaml(step_document, '__SCOPE__')
+            description = from_yaml(step_document, '__DESCRIPTION__')
+            name = from_yaml(step_document, '__NAME__')
+            cmd = from_yaml(step_document, '__CMD__')
             assert(scope is not None and description is not None
                    and name is not None and cmd is not None)
             assert(scope is not "" and description is not ""
@@ -218,12 +237,12 @@ def main(arguments):
             logging.critical("Probleme detected at pipe step number %s,"
                              " be sure to have correct '__DESCRIPTION__'"
                              ", '__SCOPE__', '__NAME__', and '__CMD__' keys.",
-                             yaml_pipe_document.index(pipe_step_doc))
+                             steps.index(step_document))
             sys.exit(1)
 
-    for pipe_step_doc in yaml_pipe_document:
-        scope = from_yaml(pipe_step_doc, '__SCOPE__')
-        submit_process(exprs_for_scope[scope], pipe_step_doc)
+    for step_document in steps:
+        scope = from_yaml(step_document, '__SCOPE__')
+        submit_process(exprs_for_scope[scope], step_document)
 
 # -- Main
 if __name__ == '__main__':
