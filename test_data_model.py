@@ -69,18 +69,18 @@ def test_init(init_data_model):
                         'SCOPE_4': '${SCOPE_4}',
                         '__ROOT__': '${__ROOT__}'}}
 
-    assert init_data_model._root == path.path('tests_data').abspath()
+    assert init_data_model._root == path.Path('tests_data').abspath()
     assert len(init_data_model.scopes) == 7
 
 
-def test_resolve_static(init_data_model):
-    ans = init_data_model._resolve_static('${SCOPE_1}', "SCOPE_1")
+def test_evaluate_static(init_data_model):
+    ans = init_data_model._evaluate_static('${SCOPE_1}', "SCOPE_1")
     assert ans == "scope_1.*?/"
 
-    ans = init_data_model._resolve_static('$${SCOPE_1}}', "SCOPE_1")
+    ans = init_data_model._evaluate_static('$${SCOPE_1}}', "SCOPE_1")
     assert ans == "$scope_1.*?/}"
 
 
-def test_resolve_nested(init_data_model):
-    ans = init_data_model.resolve('${SCOPE_2}')
+def test_evaluate_nested(init_data_model):
+    ans = init_data_model.evaluate('${SCOPE_2}')
     assert ans == "(scope_2_\\d/|scope_2_[a-zA-Z]/)"

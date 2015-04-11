@@ -1,4 +1,4 @@
-import data_model
+import scope
 import logging
 import pytest
 
@@ -22,8 +22,8 @@ def init_logging():
 @pytest.yield_fixture()
 def init_scope():
     init_logging()
-    scope = data_model.Scope("test", r"^test$", ['/t/1', '/t/2'])
-    yield scope
+    scope_ = scope.Scope("test", r"^test$", ['/t/1', '/t/2'])
+    yield scope_
 
 
 def test_init(init_scope):
