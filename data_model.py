@@ -11,10 +11,10 @@ except ImportError:
                     "checkout requirement.txt.")
 
 
-# char to escaped in a regular expression outside []
+# char to escape in a regular expression to be taken as literal.
 TO_ESCAPE_FOR_RE = r"()[]{}*+?|.^$-\\"
-# char to escaped in a regular expression inside []
-TO_ESCAPE_IN = r"\^\-\]\\"
+# char to escaped inside [] in a regular expression to be taken as literal.
+TO_ESCAPE_INSIDE_BRACKET_FOR_RE = r"\^\-\]\\"
 
 
 def escape_reserved_re_char(string):
@@ -24,7 +24,7 @@ def escape_reserved_re_char(string):
     """
     # first escape all char that have to be escaped inside []
     # (we're actually putting them inside [])
-    to_escape = re.sub("(?P<char>[" + TO_ESCAPE_IN + "])",
+    to_escape = re.sub("(?P<char>[" + TO_ESCAPE_INSIDE_BRACKET_FOR_RE + "])",
                        r"\\\g<char>",
                        TO_ESCAPE_FOR_RE)
     return re.sub("(?P<char>[" + to_escape + "])",
