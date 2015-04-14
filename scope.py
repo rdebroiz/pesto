@@ -2,9 +2,9 @@ from pprint import pformat
 
 
 class Scope():
-    name = "undifined name"
-    expression = "undifined reg exp"
-    values = []
+    name = None
+    expression = None
+    values = None
 
     def __init__(self, name, expression, values):
         self.name = name

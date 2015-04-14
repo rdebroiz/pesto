@@ -1,3 +1,4 @@
 docopt==0.6.2
 PyYAML==3.11
 pytest==2.7.0
+path.py==7.2

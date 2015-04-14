@@ -1,8 +1,9 @@
-import logging
 import re
+import logging
 
 from pesto import quit_with_error
 from scope import Scope
+from evaluator import Evaluator
 
 try:
     import path
@@ -32,60 +33,75 @@ def escape_reserved_re_char(string):
                   string)
 
 
-class DataModel():
-    _helpers = {}
-    _root = path.Path()
-    scopes = {}
+class MetaDataModel(type):
+    """
+    Meta class for DataModel.
+    Used to have a 'class property' behavor for the:
+    _files, _root and _scopes class attribut.
 
-    def __init__(self, document):
-        self._helpers = document
+    i.e. they can't be modified outside DataModel.
+    """
+    @property
+    def files(cls):
+        return cls._files
+
+    @property
+    def root(cls):
+        return cls._root
+
+    @property
+    def scopes(cls):
+        return cls._scopes
+
+
+class DataModel(MetaDataModel):
+
+    _files = None
+    _root = None
+    _scopes = None
+
+    def __init__(self, yaml_doc):
+        # Check if the class has already been setup.
+        if(DataModel.files is not None and DataModel.root is not None and
+           DataModel.scopes is not None):
+            logging.warn("DataModel have already been setup:\nroot: %s"
+                         "\n%s files\n%s scopes", DataModel.root,
+                         len(DataModel.scopes), len(DataModel.scopes))
+        # Change helpers class instance attribut so all instances of Evaluators
+        # will use it as helpers
+        Evaluator.set_helpers(yaml_doc)
+
+        DataModel._set_root(yaml_doc['__ROOT__']).abspath()
         try:
-            self._root = path.Path(document['__ROOT__']).abspath()
-        except KeyError:
-            quit_with_error("configuration file must have a '__ROOT__' "
-                            "attribute.")
-        if(not self._root.exists()):
-            quit_with_error("{0}, does not exist ({1} given)."
-                            "".format(self._root, document['__ROOT__']))
-        try:
-            scope_name = document['__SCOPES__']
-            self.scopes[scope_name] = [scope for scope in
-                                       self._make_scopes(scope_name)]
+            if(DataModel.scopes is None):
+                DataModel.scopes = dict()
+            scope_dict = yaml_doc['__SCOPES__']
+            DataModel._make_scopes(scope_dict)
         except KeyError:
             quit_with_error("configuration file must have a '__SCOPES__' "
                             "attribute.")
 
-    def evaluate(self, string):
-        all_evaluated = False
-        while(not all_evaluated):
-            try:
-                match_dolls = re.search(r"\$\{(.*?)\}", string)
-            except TypeError:
-                logging.error("expression to evaluate is not of type String: "
-                              "%s", string)
-                raise
-            if(match_dolls):
-                try:
-                    string = self._evaluate_static(string,
-                                                   match_dolls.group(1))
-                except KeyError:
-                    logging.error("unable to evaluate expression: %s",
-                                  string)
-                    raise
-            if(not match_dolls):
-                all_evaluated = True
-        return string
+    @classmethod
+    def _set_root(cls, root):
+        try:
+            cls.root = path.Path(root)
+        except KeyError:
+            quit_with_error("configuration file must have a '__ROOT__' "
+                            "attribute.")
+        cls.files = root.walkfiles()
 
-    def _make_scopes(self, peers):
+    @classmethod
+    def _make_scopes(cls, peers):
+        evltr = Evaluator()
         for key in peers:
             name = key
             try:
-                expression = self.evaluate(peers[key])
+                expression = evltr.evaluate(peers[key])
             except (TypeError, KeyError):
                 quit_with_error("Error in __SCOPES__ definition for {0}"
                                 "".format(key))
             values = set()
-            for f in self._root.walkfiles():
+            for f in cls.files:
                 try:
                     match = re.search(r".*?" + expression, f)
                 except re.error as err:
@@ -93,16 +109,4 @@ class DataModel():
                                     "{2}".format(key, expression, err))
                 if(match):
                     values.add(escape_reserved_re_char(match.group(0)))
-            yield Scope(name, expression, sorted(values))
-
-    def _evaluate_static(self, string, to_evaluate):
-        return re.sub(r"\$\{" + to_evaluate + r"}",
-                      self._get_value_from_helpers(to_evaluate),
-                      string)
-
-    def _get_value_from_helpers(self, key):
-        try:
-            return self._helpers[key]
-        except KeyError:
-            logging.error("unable to find any key %s in configuration file",
-                          key)
+            cls.scopes[name] = Scope(name, expression, sorted(values))
