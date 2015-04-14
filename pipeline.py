@@ -87,5 +87,5 @@ class Pipeline():
         """ iterate tree in pre-order depth-first search order """
         yield node
         for child in node.children:
-            for n in cls.walk(child):
+            for n in cls.walk(Pipeline.nodes[child]):
                 yield n
