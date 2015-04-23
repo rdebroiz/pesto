@@ -1,9 +1,9 @@
 import re
 import logging
+from pprint import pformat
 
-from pesto import quit_with_error
+from log import quit_with_error
 from scope import Scope
-from evaluator import Evaluator
 
 try:
     import path
@@ -45,53 +45,86 @@ class MetaDataModel(type):
     def files(cls):
         return cls._files
 
+    @files.setter
+    def files(self, value):
+        self._files = value
+
     @property
     def root(cls):
         return cls._root
+
+    @root.setter
+    def root(self, value):
+        self._root = value
 
     @property
     def scopes(cls):
         return cls._scopes
 
+    @scopes.setter
+    def scopes(self, value):
+        self._scopes = value
 
-class DataModel(MetaDataModel):
+    @property
+    def document_path(self):
+        return self._document_path
 
+    @document_path.setter
+    def document_path(self, value):
+        self._document_path = value
+
+
+class DataModel(metaclass=MetaDataModel):
     _files = None
     _root = None
     _scopes = None
+    _document_path = None
 
-    def __init__(self, yaml_doc):
+    def __init__(self, yaml_doc, yaml_doc_dir):
         # Check if the class has already been setup.
         if(DataModel.files is not None and DataModel.root is not None and
            DataModel.scopes is not None):
             logging.warn("DataModel have already been setup:\nroot: %s"
                          "\n%s files\n%s scopes", DataModel.root,
                          len(DataModel.scopes), len(DataModel.scopes))
+        DataModel.document_path = yaml_doc_dir
         # Change helpers class instance attribut so all instances of Evaluators
         # will use it as helpers
+        from evaluator import Evaluator
         Evaluator.set_helpers(yaml_doc)
-
-        DataModel._set_root(yaml_doc['__ROOT__']).abspath()
+        try:
+            DataModel._set_root(yaml_doc['__ROOT__'])
+        except KeyError:
+            logging.error("configuration file must have a '__ROOT__' "
+                          "attribute.")
+        except (OSError, KeyError):
+            quit_with_error("unable to build data model. "
+                            "bad key: '__ROOT__'")
         try:
             if(DataModel.scopes is None):
                 DataModel.scopes = dict()
             scope_dict = yaml_doc['__SCOPES__']
             DataModel._make_scopes(scope_dict)
+            logging.debug("Scopes:\n%s", pformat(DataModel.scopes))
         except KeyError:
-            quit_with_error("configuration file must have a '__SCOPES__' "
-                            "attribute.")
+            logging.error("configuration file must have a '__SCOPES__' "
+                          "attribute.")
+            quit_with_error("unable to build data model. "
+                            "bad key: '__SCOPES__'")
 
     @classmethod
     def _set_root(cls, root):
+        cls.root = path.Path(root).abspath()
         try:
-            cls.root = path.Path(root)
-        except KeyError:
-            quit_with_error("configuration file must have a '__ROOT__' "
-                            "attribute.")
-        cls.files = root.walkfiles()
+            cls.files = sorted(cls.root.walkfiles())
+            logging.debug("files:\n%s", pformat(cls.files))
+        except OSError:
+            logging.error("no such directory: ('%s')", cls.root)
+            raise
 
     @classmethod
     def _make_scopes(cls, peers):
+        from evaluator import Evaluator
         evltr = Evaluator()
         for key in peers:
             name = key

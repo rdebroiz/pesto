@@ -1,5 +1,5 @@
 from concurrent.futures.thread import threading
-from pesto import quit_with_error
+from log import quit_with_error
 
 try:
     import yaml
@@ -10,7 +10,7 @@ except ImportError as err:
 
 class YamlIO():
 
-    _LOCK = threading._LOCK
+    _LOCK = threading.Lock()
 
     @classmethod
     def load_yaml(cls, yaml_filename):

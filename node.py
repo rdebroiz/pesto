@@ -1,6 +1,6 @@
-from pipeline import Pipeline
-from data_model import DataModel
 import logging
+
+ROOT_NAME = "root"
 
 
 class Node():
@@ -8,12 +8,16 @@ class Node():
     _scope = None
     _name = None
     _cmd = None
-    _dependencies = None
     _workers_modifier = None
-    _parents = [Pipeline.root.name]
-    _children = []
+    _parents = None
+    _children = None
 
-    def __init__(self, yaml_doc, previous_node=None):
+    def __init__(self, yaml_doc, previous_node):
+        # initialise mutable attributs
+        self._parents = set()
+        self.children = set()
+
+        from data_model import DataModel
         try:
             self._name = yaml_doc['__NAME__']
         except KeyError:
@@ -36,18 +40,40 @@ class Node():
             logging.error("missing '__CMD__' key")
             raise
         try:
-            self._dependencies = yaml_doc['__DEPENDENCIES__']
+            self._parents = yaml_doc['__DEPEND_ON__']
         except KeyError:
-            if(previous_node is not None):
-                self._dependencies = [previous_node.name]
+            self._parents.add(previous_node.name)
         try:
-            self._workers_modifier = float(['__WORKERS_MODIFIER__'])
-            self._scope = DataModel.scopes[scope_name]
+            self._workers_modifier = yaml_doc['__WORKERS_MODIFIER__']
         except KeyError:
             self._workers_modifier = 1
+        try:
+            if(self._workers_modifier is not None):
+                self._workers_modifier = float(self._workers_modifier)
         except TypeError:
             logging.error("__WORKERS_MODIFIER__ must be castable "
                           "in float")
+            raise
+        self._scope = DataModel.scopes[scope_name]
+
+    def __str__(self):
+        return ("[--\nname: {0},"
+                "\ndescription: {1},"
+                "\nscope: {2},"
+                "\ncmd: {3},"
+                "\nworkers_modifier: {4},"
+                "\nparents: {5},"
+                "\nchildren: {6}"
+                "\n--]".format(self._name,
+                               self._description,
+                               self._scope.name,
+                               self._cmd,
+                               self._workers_modifier,
+                               self._parents,
+                               self._children))
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def description(self):
@@ -64,10 +90,6 @@ class Node():
     @property
     def cmd(self):
         return self._cmd
-
-    @property
-    def dependencies(self):
-        return self._dependencies
 
     @property
     def workers_modifier(self):
@@ -88,3 +110,21 @@ class Node():
     @parents.setter
     def parents(self, value):
         self._parents = value
+
+
+class Root(Node):
+    def __init__(self):
+        self._description = "root"
+        self._name = ROOT_NAME
+        self._children = set()
+        self._parents = set()
+        self._workers_modifier = 1
+        self._cmd = []
+
+    def __str__(self):
+        return ("[--\nname: {0},"
+                "\ndescription: {1},"
+                "\nchildren: {2}"
+                "\n--]".format(self._name,
+                               self._description,
+                               self._children))

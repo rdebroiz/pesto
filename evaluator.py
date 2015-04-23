@@ -1,12 +1,10 @@
 import logging
 import re
 
-from data_model import DataModel
 from pprint import pformat
 
 
 class Evaluator():
-    # Should be an instance of DataModel.
     _helpers = None
     _cur_scope_value = None
 
@@ -83,6 +81,7 @@ class Evaluator():
         Finally substitute the ?{to_evaluate} by what have been found
         in 'yaml_string'
         """
+        from data_model import DataModel
         match_redirect = re.search(r"(.*?)->(.*)", to_evaluate)
         to_substitute = to_evaluate
         scope_value = self._cur_scope_value

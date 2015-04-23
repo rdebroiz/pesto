@@ -12,8 +12,8 @@ class Scope():
         self.values = values
 
     def __str__(self):
-        return ("name: {0}\nreg-exp: {1}\nvalues: {2}"
+        return ("name: {0}\nreg-exp: {1}\nvalues:\n{2}"
                 "".format(self.name, self.expression, pformat(self.values)))
 
     def __repr__(self):
-        return "{--\n{0}\n--}".format(self.__str__())
+        return "\n[--\n{0}\n--]".format(self.__str__())
