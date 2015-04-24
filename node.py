@@ -1,3 +1,4 @@
+from log import quit_with_error
 import logging
 
 ROOT_NAME = "root"
@@ -11,13 +12,17 @@ class Node():
     _workers_modifier = None
     _parents = None
     _children = None
+    _cmd_for_value = None
 
     def __init__(self, yaml_doc, previous_node):
         # initialise mutable attributs
         self._parents = set()
-        self.children = set()
+        self.parents.add(ROOT_NAME)
+        self._children = set()
+        self._cmd_for_value = dict()
 
         from data_model import DataModel
+        from evaluator import Evaluator
         try:
             self._name = yaml_doc['__NAME__']
         except KeyError:
@@ -55,6 +60,14 @@ class Node():
                           "in float")
             raise
         self._scope = DataModel.scopes[scope_name]
+
+        for scope_value in self._scope.values:
+            evaluator = Evaluator(cur_scope_value=scope_value)
+            try:
+                self._cmd_for_value[scope_value] = [evaluator.evaluate(arg)
+                                                    for arg in self._cmd]
+            except (TypeError, KeyError):
+                quit_with_error("Error in node {0}.".format(self._name))
 
     def __str__(self):
         return ("[--\nname: {0},"
@@ -119,7 +132,8 @@ class Root(Node):
         self._children = set()
         self._parents = set()
         self._workers_modifier = 1
-        self._cmd = []
+        self._cmd = list()
+        self._cmd_for_value = dict()
 
     def __str__(self):
         return ("[--\nname: {0},"

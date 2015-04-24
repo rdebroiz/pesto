@@ -15,6 +15,7 @@ class Evaluator():
     def __init__(self, cur_scope_value=None):
         if (self._helpers is None):
             logging.error("Evaluator created without any _helpers.\n")
+        self._cur_scope_value = cur_scope_value
         if(self._cur_scope_value is None):
             self._cur_scope_value = ""
 
@@ -44,7 +45,7 @@ class Evaluator():
                     string = self._evaluate_dynamic(string,
                                                     match_quest.group(1))
             except KeyError:
-                logging.error("unable to evaluate expression: %s",
+                logging.error("unable to evaluate expression: '%s'",
                               string)
                 raise
             if(not match_dolls):
@@ -66,14 +67,14 @@ class Evaluator():
         if there is a match for '->' 'to_evaluate' is replaced
         by what is precedding '->'.
         What is following '->' is considered as a key entry in
-        'SODA_DATA_STRUCTURE', 'current_expr' is replaced by the value
+        'DataModel', 'current_expr' is replaced by the value
         corresponding to that key.
 
-        Then get of all files from 'SODA_FILES_IN_ROOT' having a path matching
+        Then get of all files from 'DataModel.files' having a path matching
         the regular expression 'current_expr'
 
         'to_evaluate' is then considered as a key entry in
-        'SODA_DATA_STRUCTURE'. Later we seek for a match between
+        'DataModel'. Later we seek for a match between
         the regular expression  given by that key and the list of
         filenames computed before. An error is raised if more than one match
         has been found.
@@ -101,10 +102,10 @@ class Evaluator():
             if match_eval:
                 evaluated_value.add(match_eval.group(0))
         if (len(evaluated_value) != 1):
-            msg = "Bad evaluation of '{0}', within '{1}'\n"\
-                  "Matches are:{2}".format(to_substitute,
-                                           string,
-                                           pformat(evaluated_value))
+            msg = ("Bad evaluation of '{0}', within: '{1}'\n"
+                   "Matches are:{2}".format(to_substitute,
+                                            string,
+                                            pformat(evaluated_value)))
             logging.error(msg)
             raise KeyError("")
         new = evaluated_value.pop()

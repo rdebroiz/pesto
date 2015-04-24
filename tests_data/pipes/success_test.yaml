@@ -26,6 +26,7 @@ __CMD__:
 
 ---
 
+# __DEPEND_ON__: ["echo_dynamic_scope4", "echo_dynamic_scope2"]
 __DESCRIPTION__: "Echo dynamic evaluation of available scopes in SCOPE_3"
 __SCOPE__: SCOPE_3
 
@@ -40,6 +41,7 @@ __CMD__:
 
 ---
 
+# __DEPEND_ON__: ["echo_dynamic_scope3"]
 __DESCRIPTION__: "Echo dynamic evaluation of available scopes in SCOPE_4"
 __SCOPE__: SCOPE_4
 
@@ -56,6 +58,7 @@ __CMD__:
 
 ---
 
+# __DEPEND_ON__: ["echo_dynamic_scope4"]
 __DESCRIPTION__: "Echo dynamic evaluation of SCOPE_2_DIGIT from SCOPE_2_LETTER (redirection in SCOPE_1)"
 __SCOPE__: SCOPE_2_LETTER
 

@@ -2,7 +2,7 @@ import logging
 import sys
 
 
-def quit_with_error(msg=''):
+def quit_with_error(msg):
     logging.critical(msg)
     sys.exit(1)
 
@@ -31,7 +31,7 @@ def setup(lof_file, lvl):
     # set a format which is simpler for console use
     ENDC = '\033[0m'
     BOLD = '\033[1m'
-    formatter = logging.Formatter(BOLD + '[%(levelname)s]: %(message)s' + ENDC)
+    formatter = logging.Formatter(BOLD + '[%(levelname)s]: %(message)s\n' + ENDC)
     # tell the handler to use this format
     console.setFormatter(formatter)
     # add the handler to the root logger
