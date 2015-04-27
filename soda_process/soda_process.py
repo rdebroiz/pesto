@@ -73,8 +73,8 @@ def process_in_scope(current_expr, pipe_step_doc, result_for_expr):
         logging.error("Unable to evaluate yaml variable:\n%s", str(err))
         return -1
     # we had a non string arg, something wrong happen so we return -1.
-    except TypeError:
-        logging.error("Error in commmand: %s", cmd_list)
+    except TypeError as err:
+        logging.error("Error in commmand: %s\n%s", cmd_list, err)
         return -1
 
     return_code = call_process(cmd_list)

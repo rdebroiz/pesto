@@ -114,8 +114,9 @@ def evaluate_dynamic_expression(yaml_string, to_evaluate, current_expr):
     if match_redirect:
         to_evaluate = match_redirect.group(1)
         scope = match_redirect.group(2)
-        current_expr = from_yaml(builtins.SODA_DATA_STRUCTURE, scope,
-                                 current_expr=current_expr)
+        pattern = from_yaml(builtins.SODA_DATA_STRUCTURE, scope,
+                            current_expr=current_expr)
+        current_expr = re.search(pattern, current_expr).group(0)
 
     files_in_scope = [f for f in builtins.SODA_FILES_IN_ROOT
                       if re.search(current_expr, f)]
@@ -172,7 +173,7 @@ def evaluate_yaml_expression(yaml_string, current_expr=''):
             logging.error("Attempt to evaluate non string expression "
                           "from yaml document: %s", yaml_string)
             raise
-            
+
         if(match_dolls):
             yaml_string = evaluate_static_expression(yaml_string,
                                                      match_dolls.group(1),
