@@ -16,12 +16,29 @@ import logging
 import os
 import sys
 
+import signal
+
 
 OKGREEN = '\033[92m'
 FAIL = '\033[91m'
 ENDC = '\033[0m'
 RETURN = '\033[K\r'
 
+
+class DelayedKeyboardInterrupt(object):
+    def __enter__(self):
+        self.signal_received = False
+        self.old_handler = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, self.handler)
+
+    def handler(self, signal, frame):
+        self.signal_received = (signal, frame)
+        logging.info('SIGINT received. Delaying KeyboardInterrupt.')
+
+    def __exit__(self, type, value, traceback):
+        signal.signal(signal.SIGINT, self.old_handler)
+        if self.signal_received:
+            self.old_handler(*self.signal_received)
 
 def call_process(cmd_list):
     """
@@ -134,7 +151,8 @@ def submit_process(exprs, pipe_step_doc):
                           ), end="")
 
             # Dump the retrun codes in a yaml doc
-            dump_yaml(result_for_expr, result_for_expr_filename)
+            with DelayedKeyboardInterrupt:
+                dump_yaml(result_for_expr, result_for_expr_filename)
 
         # Rewrite an empty line
         print("")
