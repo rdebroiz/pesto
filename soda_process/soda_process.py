@@ -151,7 +151,7 @@ def submit_process(exprs, pipe_step_doc):
                           ), end="")
 
             # Dump the retrun codes in a yaml doc
-            with DelayedKeyboardInterrupt:
+            with DelayedKeyboardInterrupt():
                 dump_yaml(result_for_expr, result_for_expr_filename)
 
         # Rewrite an empty line
