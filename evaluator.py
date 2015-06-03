@@ -48,7 +48,7 @@ class Evaluator():
                 logging.error("unable to evaluate expression: '%s'",
                               string)
                 raise
-            if(not match_dolls):
+            if(not match_dolls and not match_quest):
                 all_evaluated = True
         return string
 

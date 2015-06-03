@@ -5,53 +5,40 @@ try:
 except ImportError:
     quit_with_error("Pesto requiered path.py to be installed, "
                     "checkout requirement.txt.")
-import logging
-import concurrent
-import collections
+try:
+    import networkx
+except ImportError:
+    quit_with_error("Pesto requiered path.py to be installed, "
+                    "checkout requirement.txt.")
 
 
-class PipelineError(Exception):
-    def __init__(self, value):
-        self.value = value
+# class PipelineError(Exception):
+#     def __init__(self, value):
+#         self.value = value
 
-    def __str__(self):
-        return repr(self.value)
+#     def __str__(self):
+#         return repr(self.value)
 
+from node import Root
 
-class MetaPipeline(type):
-    @property
-    def nodes(cls):
-        return cls._nodes
-
-    @nodes.setter
-    def nodes(cls, value):
-        cls._nodes = value
-
-    @property
-    def root(cls):
-        return cls._root
-
-
-class Pipeline(metaclass=MetaPipeline):
-
-    from node import Root
-    _nodes = None
+class Pipeline():
     _root = Root()
+    _graph = networkx.DiGraph()
+    _nodes = None
 
     def __init__(self, yaml_documents):
-        if Pipeline.node is not None:
-            logging.warning("Pipeline have already been setup.")
-        else:
-            Pipeline = {Pipeline.root.name, Pipeline.root}
-            self._build_from_documents(yaml_documents, Pipeline.root)
-            try:
-                Pipeline._transitive_reduction()
-                Pipeline._resolve_children()
-                Pipeline._backend_edge_detection()
-            except PipelineError as err:
-                quit_with_error("Error detected in pipeline.\n{0}".format(err))
+        # init with root
+        self._nodes = {self._root.name: self._root}
+        self._graph.add_node(self._root.name)
+        # build graph
+        self._build_nodes_from_documents(yaml_documents, self._root)
+        self._build_edges()
+        if not networkx.is_directed_acyclic_graph(self._graph):
+            quit_with_error("Cycle detected in pipeline")
+        # refine graph
+        self._transitive_reduction()
 
-    def _build_from_documents(self, documents, previous_node):
+    def _build_nodes_from_documents(self, documents, previous_node):
         from node import Node
         from yaml_io import YamlIO
         from evaluator import Evaluator
@@ -63,75 +50,114 @@ class Pipeline(metaclass=MetaPipeline):
                 if(not filename.isabs()):
                     filename = DataModel.document_path / filename
                 d = YamlIO.load_all_yaml(filename)
-                previous_node = self._build_from_documents(d, previous_node)
+                previous_node = self._build_nodes_from_documents(d, 
+                                                                 previous_node)
             else:
                 node = Node(doc, previous_node)
                 previous_node = node
-                Pipeline.nodes[node.name] = node
+                self._graph.add_node(node.name)
+                self._nodes[node.name] = node
         return previous_node
 
-    @classmethod
-    def _transitive_reduction(cls):
-        for node_x in cls.nodes.values():
-            for node_y in cls.nodes.values():
-                for node_z in cls.nodes.values():
-                    # delete edge xz if edges xy and yz exist
-                    if(node_x.name in node_z.parents and
-                       node_x.name in node_y.parents and
-                       node_y.name in node_z.parents):
-                        node_z.parents.remove(node_x.name)
+    def _build_edges(self):
+        for node in self._nodes:
+            for parent in self._nodes[node].parents:
+                self._graph.add_edge(parent, node)
 
-    @classmethod
-    def _resolve_children(cls):
-        for node_name_1 in cls.nodes:
-            for node_name_2 in cls.nodes:
-                if node_name_1 == node_name_2:
-                    continue
-                else:
-                    node1 = cls.nodes[node_name_1]
-                    node2 = cls.nodes[node_name_2]
-                    if node_name_1 in node2.parents:
-                        node1.children.add(node_name_2)
+    def _transitive_reduction(self):
+        reducted_graph = networkx.DiGraph()
+        reducted_graph.add_nodes_from(self._graph.nodes())
 
-    @classmethod
-    def _backend_edge_detection(cls):
-        visited = set()
-        for node in cls.walk(cls.root):
-            visited.add(node.name)
-            for n in visited:
-                if n in node.children:
-                    raise PipelineError("circular dependence: "
-                                        "{0} depend on {1} which is "
-                                        "already one of his children"
-                                        "".format(n, node.name))
+        #  get longest path between root and all nodes of the pipeline:
+        for node in self._graph.nodes():
+            if node == self._root.name:
+                continue
+            paths = self._find_longest_paths(self._root.name, node)
+            # add edges corresponding to those paths to the reducted graph
+            for p in paths:
+                    end = len(p) - 1
+                    for n1, n2 in zip(p[:end], p[1:]):
+                        reducted_graph.add_edge(n1, n2)
 
-    @classmethod
-    def walk(cls, node):
-        """ iterate tree in pre-order depth-first search order """
-        yield node
-        for child in node.children:
-            for n in cls.walk(cls.nodes[child]):
-                yield n
+        self._graph = reducted_graph
+
+    # TODO: clean this up
+    def _find_longest_paths(self, src, dest, visited=None, longest_paths=None):
+        if visited is None:
+            visited = []
+        if longest_paths is None:
+            longest_paths = [[]]
+        # if not src in current_path:
+        current_path = visited.copy()
+        current_path.append(src)
+        # are we at destination ? if yes compare and return
+        if src == dest:
+            is_longest = False
+            for p in longest_paths:
+                if len(p) <= len(current_path):
+                    is_longest = True
+                    longest_paths.append(current_path)
+                    if len(p) < len(current_path):
+                        longest_paths.remove(p)
+                if is_longest:
+                    return longest_paths
+
+        # else continue to walk
+        else:
+            for src, child in self._graph.edges(src):
+                longest_paths = self._find_longest_paths(child,
+                                                         dest,
+                                                         visited=current_path,
+                                                         longest_paths=longest_paths)
+        return longest_paths
+
+    def walk(self, node=None):
+        for n in networkx.dfs_preorder_nodes(self._graph, node):
+            yield self._nodes[n]
+
+    @property
+    def root(self):
+        return self._root
 
 
-# class PipelineExecutor():
-#     def print_progression(self):
-#         print("pouette")
+class PipelineExecutor():
+    def print_progression(self):
+        print("pouette")
 
-#     def execute_node(self, node):
+    def execute_node(self, node):
+        print("pouette execute")
 
-# class ThreadedPipelineExecutor(PipelineExecutor):
-#     _max_workers = 0
-#     _futures = None
 
-#     def __init__(self, max_workers):
-#         self._max_workers = max_workers
-#         self._futures = dict()
+from concurrent import futures
+from concurrent.futures import ThreadPoolExecutor
+from evaluator import Evaluator
 
-#     def execute():
-#         for node in Pipeline.walk(Pipeline.root):
-#             max_workers = self._max_workers * node.max_workers
-#             with concurrent.future.ThreadPoolExecutor(max_workers) as ex:
-#                 for scope_value in node.scope.values:                    
-#                 self._futures[scope_value] = ex.submit()
 
+class ThreadedPipelineExecutor(PipelineExecutor):
+    _pipeline = None
+    _max_workers = 0
+    _futures = None
+
+    def __init__(self, pipeline, max_workers):
+        self._max_workers = max_workers
+        self._pipeline = pipeline
+        self._futures = dict()
+
+    def print_execution(self):
+        for node in self._pipeline.walk():
+            if node == self._pipeline.root:
+                print("This is root.")
+                continue
+            print("Executing: ", node.name)
+            for scope_value in node.scope.values:
+                evaluator = Evaluator(scope_value)
+                cmd_str = evaluator.evaluate(" ".join(node.cmd))
+                print(cmd_str)
+
+
+    # def execute():
+    #     for node in Pipeline.walk(Pipeline.root):
+    #         max_workers = self._max_workers * node.max_workers
+    #         with concurrent.future.ThreadPoolExecutor(max_workers) as ex:
+    #             for scope_value in node.scope.values:                    
+    #             self._futures[scope_value] = ex.submit()

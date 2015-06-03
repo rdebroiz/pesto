@@ -111,7 +111,11 @@ def main(arguments):
     # ##############################################################################
 
     from pipeline import Pipeline
-    Pipeline(yaml_document)
+    pipeline = Pipeline(yaml_document)
+    from pipeline import ThreadedPipelineExecutor
+    executor = ThreadedPipelineExecutor(pipeline, max_workers)
+    executor.print_execution()
+
 
 # -- Main
 if __name__ == '__main__':
