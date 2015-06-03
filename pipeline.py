@@ -1,4 +1,6 @@
 from log import quit_with_error
+import logging
+from pprint import pformat
 
 try:
     import path
@@ -6,11 +8,10 @@ except ImportError:
     quit_with_error("Pesto requiered path.py to be installed, "
                     "checkout requirement.txt.")
 try:
-    import networkx
+    import networkx as nx
 except ImportError:
     quit_with_error("Pesto requiered path.py to be installed, "
                     "checkout requirement.txt.")
-
 
 # class PipelineError(Exception):
 #     def __init__(self, value):
@@ -21,9 +22,10 @@ except ImportError:
 
 from node import Root
 
+
 class Pipeline():
     _root = Root()
-    _graph = networkx.DiGraph()
+    _graph = nx.DiGraph()
     _nodes = None
 
     def __init__(self, yaml_documents):
@@ -31,14 +33,15 @@ class Pipeline():
         self._nodes = {self._root.name: self._root}
         self._graph.add_node(self._root.name)
         # build graph
-        self._build_nodes_from_documents(yaml_documents, self._root)
+        self._build_nodes_from_documents(yaml_documents)
         self._build_edges()
-        if not networkx.is_directed_acyclic_graph(self._graph):
-            quit_with_error("Cycle detected in pipeline")
+        if self._cycle_detection():
+            quit_with_error("Pipeline can't be cyclic")
+        # TODO woulbe great to tell where is the cycle
         # refine graph
         self._transitive_reduction()
 
-    def _build_nodes_from_documents(self, documents, previous_node):
+    def _build_nodes_from_documents(self, documents):
         from node import Node
         from yaml_io import YamlIO
         from evaluator import Evaluator
@@ -50,24 +53,32 @@ class Pipeline():
                 if(not filename.isabs()):
                     filename = DataModel.document_path / filename
                 d = YamlIO.load_all_yaml(filename)
-                previous_node = self._build_nodes_from_documents(d, 
-                                                                 previous_node)
+                self._build_nodes_from_documents(d)
             else:
-                node = Node(doc, previous_node)
-                previous_node = node
+                try:
+                    node = Node(doc, self._graph.nodes())
+                except:
+                    quit_with_error("Unable to build node from: "
+                                    "{}".format(pformat(doc)))
                 self._graph.add_node(node.name)
                 self._nodes[node.name] = node
-        return previous_node
 
     def _build_edges(self):
         for node in self._nodes:
             for parent in self._nodes[node].parents:
                 self._graph.add_edge(parent, node)
 
-    def _transitive_reduction(self):
-        reducted_graph = networkx.DiGraph()
-        reducted_graph.add_nodes_from(self._graph.nodes())
+    def _cycle_detection(self):
+        have_cycle = False
+        for cycle in nx.simple_cycles(self._graph):
+            have_cycle = True
+            logging.error("Cycle found: "
+                          "%s", pformat(cycle))
+        return have_cycle
 
+    def _transitive_reduction(self):
+        reducted_graph = nx.DiGraph()
+        reducted_graph.add_nodes_from(self._graph.nodes())
         #  get longest path between root and all nodes of the pipeline:
         for node in self._graph.nodes():
             if node == self._root.name:
@@ -78,10 +89,9 @@ class Pipeline():
                     end = len(p) - 1
                     for n1, n2 in zip(p[:end], p[1:]):
                         reducted_graph.add_edge(n1, n2)
-
         self._graph = reducted_graph
 
-    # TODO: clean this up
+    # TODO: This can become very time consuming, look for another algo ?
     def _find_longest_paths(self, src, dest, visited=None, longest_paths=None):
         if visited is None:
             visited = []
@@ -111,21 +121,61 @@ class Pipeline():
                                                          longest_paths=longest_paths)
         return longest_paths
 
-    def walk(self, node=None):
-        for n in networkx.dfs_preorder_nodes(self._graph, node):
+    def walk(self, node):
+        # TODO there must have a better way to do it.
+        # yield node
+        for n in nx.topological_sort(self._graph,
+                                     nx.descendants(self._graph, node.name)):
             yield self._nodes[n]
 
     @property
     def root(self):
         return self._root
 
+    @property
+    def nodes(self):
+        return self._nodes
+
 
 class PipelineExecutor():
-    def print_progression(self):
-        print("pouette")
+    _pipeline = None
+    
+    def _print_progression(self):
+        pass
 
-    def execute_node(self, node):
-        print("pouette execute")
+    def execute(self, node_name=None):
+        if node_name is None:
+            node = self._pipeline.root
+        else:
+            node = self._pipeline.nodes[node_name]
+            self._execute_one_node(node)
+        for n in self._pipeline.walk(node):
+            self._execute_one_node(n)
+
+    def _execute_one_node(self, node, scope_pattern=None):
+        pass
+
+    def print_execution(self, node_name=None):
+        if node_name is None:
+            node = self._pipeline.root
+        else:
+            try:
+                node = self._pipeline.nodes[node_name]
+            except KeyError:
+                quit_with_error("Unable to find node '\033[91m{}\033[0m\033[1m'"
+                                " in pipeline".format(node_name))
+            self._print_one_node_execution(node)
+        for n in self._pipeline.walk(node):
+            self._print_one_node_execution(n)
+
+    def _print_one_node_execution(self, node):
+        ENDC = '\033[0m'
+        BOLD = '\033[1m'
+        print(BOLD, "\nExecuting: ", node.name, ENDC)
+        for scope_value in node.scope.values:
+            evaluator = Evaluator(scope_value)
+            cmd_str = evaluator.evaluate(" ".join(node.cmd))
+            print(cmd_str)
 
 
 from concurrent import futures
@@ -134,7 +184,6 @@ from evaluator import Evaluator
 
 
 class ThreadedPipelineExecutor(PipelineExecutor):
-    _pipeline = None
     _max_workers = 0
     _futures = None
 
@@ -143,16 +192,11 @@ class ThreadedPipelineExecutor(PipelineExecutor):
         self._pipeline = pipeline
         self._futures = dict()
 
-    def print_execution(self):
-        for node in self._pipeline.walk():
-            if node == self._pipeline.root:
-                print("This is root.")
-                continue
-            print("Executing: ", node.name)
-            for scope_value in node.scope.values:
-                evaluator = Evaluator(scope_value)
-                cmd_str = evaluator.evaluate(" ".join(node.cmd))
-                print(cmd_str)
+    def _execute_one_node(self, node):
+        max_workers = self._max_workers * node.max_workers
+        with ThreadPoolExecutor(max_workers) as ex:
+            for scope_value in node.scope.values:                    
+                self._futures[scope_value] = ex.submit()
 
 
     # def execute():

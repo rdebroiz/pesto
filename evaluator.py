@@ -35,7 +35,7 @@ class Evaluator():
                 match_quest = re.search(r"\?\{(.*?)\}", string)
             except TypeError:
                 logging.error("expression to evaluate is not of type String: "
-                              "%s", string)
+                              "'\033[91m%s\033[0m\033[1m'", string)
                 raise
             try:
                 if(match_dolls):
@@ -55,7 +55,7 @@ class Evaluator():
     def _evaluate_static(self, string, to_evaluate):
         """
         Subsitute the ${to_evaluate} key by the associated value
-        found in SODA_DATA_STRUCTURE in 'yaml_string'.
+        found in DataModel in 'string'.
         """
         return re.sub(r"\$\{" + to_evaluate + r"}",
                       self._get_value_from_helpers(to_evaluate),
@@ -116,5 +116,8 @@ class Evaluator():
         try:
             return self._helpers[key]
         except KeyError:
-            logging.error("unable to find any key %s in configuration file",
+            RED = '\033[91m'
+            ENDC = '\033[0m'
+            logging.error("unable to find any key '\033[91m%s\033[0m\033[1m' "
+                          "in configuration file",
                           key)

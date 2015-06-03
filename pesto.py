@@ -5,6 +5,8 @@
 Usage:
     pesto [-l <log_level> | --log <log_level>]
          [-w <workers> | --workers <workers>]
+         [-n <node_name> | --node <node_name>]
+         [-s <name:regexp> | --override_scope <name:regexp>]...
          <pipe.yaml>
     pesto -c | --clean
     pesto -h | --help
@@ -18,6 +20,11 @@ Options:
         Level of verbosity to print in the log file.
         Must be in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
         [default: INFO]
+    -n --node <node_name>
+        Launch pipeline from this node
+    -s --override_scope <name:regexp>
+        Used to override one node with a regular expression
+        example '-s SCOPE_NAME:reg-exp'
     <pipe.yaml>
         A yaml file starting with the data structure description
         and describing the pipeline.
@@ -99,9 +106,22 @@ def main(arguments):
 
     yaml_document_path = path.Path(arguments['<pipe.yaml>']).abspath()
     yaml_document = YamlIO.load_all_yaml(yaml_document_path)
+
+    scope_to_override = {}
+    for s in set(arguments['--override_scope']):
+        scope_regexp = s.split(':')
+        try:
+            scope_to_override[scope_regexp[0]] = scope_regexp[1]
+        except IndexError:
+            log.quit_with_error("Malformed scope to override: "
+                                "'\033[91m{}\033[0m\033[1m'.\n"
+                                "Have to be: SCOPE_NAME:regexp".format(s))
+
     try:
         from data_model import DataModel
-        DataModel(yaml_document.pop(0), yaml_document_path.dirname())
+        DataModel(yaml_document.pop(0), 
+                  yaml_document_path.dirname(), 
+                  scope_to_override)
     except IndexError:
         logging.critical("empty <pipe.yaml> file.")
         sys.exit(1)
@@ -114,7 +134,9 @@ def main(arguments):
     pipeline = Pipeline(yaml_document)
     from pipeline import ThreadedPipelineExecutor
     executor = ThreadedPipelineExecutor(pipeline, max_workers)
-    executor.print_execution()
+    # import ipdb
+    # ipdb.set_trace()
+    executor.print_execution(arguments['--node'])
 
 
 # -- Main

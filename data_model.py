@@ -80,7 +80,7 @@ class DataModel(metaclass=MetaDataModel):
     _scopes = None
     _document_path = None
 
-    def __init__(self, yaml_doc, yaml_doc_dir):
+    def __init__(self, yaml_doc, yaml_doc_dir, scope_to_override):
         # Check if the class has already been setup.
         if(DataModel.files is not None and DataModel.root is not None and
            DataModel.scopes is not None):
@@ -104,6 +104,12 @@ class DataModel(metaclass=MetaDataModel):
             if(DataModel.scopes is None):
                 DataModel.scopes = dict()
             scope_dict = yaml_doc['__SCOPES__']
+            # check if scope to override are ok.
+            for scope in scope_to_override:
+                if scope not in scope_dict:
+                    quit_with_error("Unable to find overrided scope "
+                                    "'\033[91m{}\033[0m\033[1m'".format(scope))
+            scope_dict.update(scope_to_override)
             DataModel._make_scopes(scope_dict)
             logging.debug("Scopes:\n%s", pformat(DataModel.scopes))
         except KeyError:
