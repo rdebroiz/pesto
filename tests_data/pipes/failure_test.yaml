@@ -14,4 +14,4 @@ __SCOPE__: SCOPE_2
 __NAME__: invalid_argument
 __CMD__: 
   - pwd
-  - --one_invalid_arg ?{SCOPE_2}
+  - --one_invalid_arg

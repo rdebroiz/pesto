@@ -4,10 +4,12 @@
 
 Usage:
     pesto [-l <log_level> | --log <log_level>]
-         [-w <workers> | --workers <workers>]
-         [-n <node_name> | --node <node_name>]
-         [-s <name:regexp> | --override_scope <name:regexp>]...
-         <pipe.yaml>
+          [-w <workers> | --workers <workers>]
+          [-p | --print]
+          [-f | --force]
+          [-n <node_name> | --node <node_name>]
+          [-s <name:regexp> | --override_scope <name:regexp>]...
+          <pipe.yaml>
     pesto -c | --clean
     pesto -h | --help
     pesto -v |--version
@@ -20,11 +22,16 @@ Options:
         Level of verbosity to print in the log file.
         Must be in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
         [default: INFO]
+    -p --print
+        Print the execution of the pipeline only.
+    -f --force
+        Force execution of any node of the pipeline.
     -n --node <node_name>
         Launch pipeline from this node
     -s --override_scope <name:regexp>
-        Used to override one node with a regular expression
-        example '-s SCOPE_NAME:reg-exp'
+        Use this option to override the regular expression used to build
+        a scope.
+        Example '-s SCOPE_NAME:reg-exp'
     <pipe.yaml>
         A yaml file starting with the data structure description
         and describing the pipeline.
@@ -119,8 +126,8 @@ def main(arguments):
 
     try:
         from data_model import DataModel
-        DataModel(yaml_document.pop(0), 
-                  yaml_document_path.dirname(), 
+        DataModel(yaml_document.pop(0),
+                  yaml_document_path.dirname(),
                   scope_to_override)
     except IndexError:
         logging.critical("empty <pipe.yaml> file.")
@@ -132,11 +139,17 @@ def main(arguments):
 
     from pipeline import Pipeline
     pipeline = Pipeline(yaml_document)
-    from pipeline import ThreadedPipelineExecutor
+    from executor import ThreadedPipelineExecutor
     executor = ThreadedPipelineExecutor(pipeline, max_workers)
+    executor.print_only = arguments['--print']
+    executor.force_execution = arguments['--force']
     # import ipdb
     # ipdb.set_trace()
-    executor.print_execution(arguments['--node'])
+
+    # ##############################################################################
+    # execute pipeline
+    # ##############################################################################
+    executor.execute(arguments['--node'])
 
 
 # -- Main

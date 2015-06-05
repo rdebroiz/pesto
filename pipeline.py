@@ -13,13 +13,6 @@ except ImportError:
     quit_with_error("Pesto requiered path.py to be installed, "
                     "checkout requirement.txt.")
 
-# class PipelineError(Exception):
-#     def __init__(self, value):
-#         self.value = value
-
-#     def __str__(self):
-#         return repr(self.value)
-
 from node import Root
 
 
@@ -135,73 +128,3 @@ class Pipeline():
     @property
     def nodes(self):
         return self._nodes
-
-
-class PipelineExecutor():
-    _pipeline = None
-    
-    def _print_progression(self):
-        pass
-
-    def execute(self, node_name=None):
-        if node_name is None:
-            node = self._pipeline.root
-        else:
-            node = self._pipeline.nodes[node_name]
-            self._execute_one_node(node)
-        for n in self._pipeline.walk(node):
-            self._execute_one_node(n)
-
-    def _execute_one_node(self, node, scope_pattern=None):
-        pass
-
-    def print_execution(self, node_name=None):
-        if node_name is None:
-            node = self._pipeline.root
-        else:
-            try:
-                node = self._pipeline.nodes[node_name]
-            except KeyError:
-                quit_with_error("Unable to find node '\033[91m{}\033[0m\033[1m'"
-                                " in pipeline".format(node_name))
-            self._print_one_node_execution(node)
-        for n in self._pipeline.walk(node):
-            self._print_one_node_execution(n)
-
-    def _print_one_node_execution(self, node):
-        ENDC = '\033[0m'
-        BOLD = '\033[1m'
-        print(BOLD, "\nExecuting: ", node.name, ENDC)
-        for scope_value in node.scope.values:
-            evaluator = Evaluator(scope_value)
-            cmd_str = evaluator.evaluate(" ".join(node.cmd))
-            print(cmd_str)
-
-
-from concurrent import futures
-from concurrent.futures import ThreadPoolExecutor
-from evaluator import Evaluator
-
-
-class ThreadedPipelineExecutor(PipelineExecutor):
-    _max_workers = 0
-    _futures = None
-
-    def __init__(self, pipeline, max_workers):
-        self._max_workers = max_workers
-        self._pipeline = pipeline
-        self._futures = dict()
-
-    def _execute_one_node(self, node):
-        max_workers = self._max_workers * node.max_workers
-        with ThreadPoolExecutor(max_workers) as ex:
-            for scope_value in node.scope.values:                    
-                self._futures[scope_value] = ex.submit()
-
-
-    # def execute():
-    #     for node in Pipeline.walk(Pipeline.root):
-    #         max_workers = self._max_workers * node.max_workers
-    #         with concurrent.future.ThreadPoolExecutor(max_workers) as ex:
-    #             for scope_value in node.scope.values:                    
-    #             self._futures[scope_value] = ex.submit()
