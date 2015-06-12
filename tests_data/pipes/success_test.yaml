@@ -1,7 +1,7 @@
 __DESCRIPTION__: "Echo dynamic evaluation of available scopes in SCOPE_1"
 __SCOPE__: SCOPE_1
 
-__NAME__: a
+__NAME__: echo_dynamic_scope1
 # The pipe char allow to yaml to see all the folowing lines with the same 
 # indentation as a litteral. see http://pyyaml.org/wiki/PyYAMLDocumentation
 # for more info.
@@ -15,8 +15,8 @@ __CMD__:
 
 __DESCRIPTION__: "Echo dynamic evaluation of available scopes in SCOPE_2"
 __SCOPE__: SCOPE_2
-__INPUT__: 
-__NAME__: b
+
+__NAME__: echo_dynamic_scope2
 __CMD__: 
   - echo
   - | 
@@ -26,10 +26,11 @@ __CMD__:
 
 ---
 
+# __DEPEND_ON__: ["echo_dynamic_scope4", "echo_dynamic_scope2"]
 __DESCRIPTION__: "Echo dynamic evaluation of available scopes in SCOPE_3"
 __SCOPE__: SCOPE_3
 
-__NAME__: c
+__NAME__: echo_dynamic_scope3
 __CMD__: 
   - echo
   - | 
@@ -40,10 +41,11 @@ __CMD__:
 
 ---
 
+# __DEPEND_ON__: ["echo_dynamic_scope3"]
 __DESCRIPTION__: "Echo dynamic evaluation of available scopes in SCOPE_4"
 __SCOPE__: SCOPE_4
 
-__NAME__: d
+__NAME__: echo_dynamic_scope4
 __CMD__: 
   - echo
   - | 
@@ -56,10 +58,11 @@ __CMD__:
 
 ---
 
+# __DEPEND_ON__: ["echo_dynamic_scope4"]
 __DESCRIPTION__: "Echo dynamic evaluation of SCOPE_2_DIGIT from SCOPE_2_LETTER (redirection in SCOPE_1)"
 __SCOPE__: SCOPE_2_LETTER
 
-__NAME__: e
+__NAME__: echo_dynamic_scope2_digit_from_scope2_letter
 __CMD__: 
   - echo
   - | 
