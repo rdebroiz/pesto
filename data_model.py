@@ -91,13 +91,16 @@ class DataModel(metaclass=MetaDataModel):
         # Change helpers class instance attribut so all instances of Evaluators
         # will use it as helpers
         from evaluator import Evaluator
+        # update yaml_doc with scopte_to_override before setting helpers.
+        # if scope_to_override in yaml_doc:
+        yaml_doc.update(scope_to_override)
         Evaluator.set_helpers(yaml_doc)
         try:
             DataModel._set_root(yaml_doc['__ROOT__'])
         except KeyError:
             logging.error("configuration file must have a '__ROOT__' "
                           "attribute.")
-        except (OSError, KeyError):
+        except (OSError, KeyError, TypeError):
             quit_with_error("unable to build data model. "
                             "bad key: '__ROOT__'")
         try:
@@ -120,6 +123,9 @@ class DataModel(metaclass=MetaDataModel):
 
     @classmethod
     def _set_root(cls, root):
+        from evaluator import Evaluator
+        evltr = Evaluator()        
+        root = evltr.evaluate(root)
         cls.root = path.Path(root).abspath()
         try:
             cls.files = sorted(cls.root.walkfiles())

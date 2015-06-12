@@ -30,9 +30,9 @@ class Pipeline():
         self._build_edges()
         if self._cycle_detection():
             quit_with_error("Pipeline can't be cyclic")
-        # TODO woulbe great to tell where is the cycle
         # refine graph
-        self._transitive_reduction()
+        import ipdb; ipdb.set_trace()
+        self._thin()
 
     def _build_nodes_from_documents(self, documents):
         from node import Node
@@ -69,50 +69,16 @@ class Pipeline():
                           "%s", pformat(cycle))
         return have_cycle
 
-    def _transitive_reduction(self):
-        reducted_graph = nx.DiGraph()
-        reducted_graph.add_nodes_from(self._graph.nodes())
-        #  get longest path between root and all nodes of the pipeline:
-        for node in self._graph.nodes():
-            if node == self._root.name:
-                continue
-            paths = self._find_longest_paths(self._root.name, node)
-            # add edges corresponding to those paths to the reducted graph
-            for p in paths:
-                    end = len(p) - 1
-                    for n1, n2 in zip(p[:end], p[1:]):
-                        reducted_graph.add_edge(n1, n2)
-        self._graph = reducted_graph
-
-    # TODO: This can become very time consuming, look for another algo ?
-    def _find_longest_paths(self, src, dest, visited=None, longest_paths=None):
-        if visited is None:
-            visited = []
-        if longest_paths is None:
-            longest_paths = [[]]
-        # if not src in current_path:
-        current_path = visited.copy()
-        current_path.append(src)
-        # are we at destination ? if yes compare and return
-        if src == dest:
-            is_longest = False
-            for p in longest_paths:
-                if len(p) <= len(current_path):
-                    is_longest = True
-                    longest_paths.append(current_path)
-                    if len(p) < len(current_path):
-                        longest_paths.remove(p)
-                if is_longest:
-                    return longest_paths
-
-        # else continue to walk
-        else:
-            for src, child in self._graph.edges(src):
-                longest_paths = self._find_longest_paths(child,
-                                                         dest,
-                                                         visited=current_path,
-                                                         longest_paths=longest_paths)
-        return longest_paths
+    def _thin(self):
+        for n in self._graph.nodes():
+            for cur_p in self._graph.predecessors(n):
+                for p in self._graph.predecessors(n):
+                    if cur_p is p:
+                        continue
+                    else:
+                        if cur_p in nx.ancestors(self._graph, p):
+                            self._graph.remove_edge(cur_p, n)
+                            break
 
     def walk(self, node):
         # TODO there must have a better way to do it.
